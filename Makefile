@@ -9,10 +9,10 @@ CMN_FILES := $(wildcard $(CMN_DIR)/*.cpp)
 CMN_OBJ_FILES := $(patsubst $(CMN_DIR)/%.cpp,$(CMN_OBJ_DIR)/%.o,$(CMN_FILES))
 
 CC := g++
-LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU
+LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU -lassimp
 LDPATHS := -L/usr/lib64
-CPPFLAGS := -O3 -flto -fuse-linker-plugin
-CXXFLAGS := -MMD -Wall -std=c++17
+CPPFLAGS := -O3 -flto -fuse-linker-plugin -MMD
+CXXFLAGS := -Wall -std=c++17
 INCLUDE_PATHS := -I.
 
 # debug settings
@@ -20,7 +20,7 @@ BUILD_DIR_DEBUG := build_debug
 CPPFLAGS_DEBUG := -g -Og
 CXXFLAGS_DEBUG := -Wall -Wextra -std=c++17
 
-all: create_build_dirs build/app
+all: create_build_dirs $(BUILD_DIR)/app
 	@true
 
 debug:
@@ -34,9 +34,9 @@ debug:
 create_build_dirs:
 	mkdir $(BUILD_DIR) -p
 	mkdir $(BUILD_DIR)/obj -p
-	mkdir $(BUILD_DIR)/obj/common -p
+	mkdir $(BUILD_DIR)/common -p
 
-build/app: $(OBJ_FILES) $(CMN_OBJ_FILES)
+$(BUILD_DIR)/app: $(OBJ_FILES) $(CMN_OBJ_FILES)
 	$(CC) $(CPPFLAGS) -o $@ $^ $(LDPATHS) $(LDFLAGS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp

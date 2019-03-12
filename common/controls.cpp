@@ -31,9 +31,7 @@ float initialFoV = 45.0f;
 
 float speed = 3.0f; // 3 units / second
 float mouseSpeed = 0.0001f;
-
-#include <cstdio>
-
+float rotationSpeed = 1.0f;
 
 void computeMatricesFromInputs(){
 
@@ -54,6 +52,20 @@ void computeMatricesFromInputs(){
 	// Compute new orientation
 	horizontalAngle += mouseSpeed * float(1024/2 - xpos );
 	verticalAngle   += mouseSpeed * float( 768/2 - ypos );
+
+	// Move forward
+	if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS){
+		verticalAngle += deltaTime * rotationSpeed;
+	}
+	if (glfwGetKey( window, GLFW_KEY_S ) == GLFW_PRESS){
+		verticalAngle -= deltaTime * rotationSpeed;
+	}
+	if (glfwGetKey( window, GLFW_KEY_A ) == GLFW_PRESS){
+		horizontalAngle += deltaTime * rotationSpeed;
+	}
+	if (glfwGetKey( window, GLFW_KEY_D ) == GLFW_PRESS){
+		horizontalAngle -= deltaTime * rotationSpeed;
+	}
 
 	// Direction : Spherical coordinates to Cartesian coordinates conversion
 	glm::vec3 direction(

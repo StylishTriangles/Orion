@@ -9,7 +9,7 @@ CMN_FILES := $(wildcard $(CMN_DIR)/*.cpp)
 CMN_OBJ_FILES := $(patsubst $(CMN_DIR)/%.cpp,$(CMN_OBJ_DIR)/%.o,$(CMN_FILES))
 
 CC := g++
-LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU -lassimp
+LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU -lassimp -ldl
 LDPATHS := -L/usr/lib64
 CPPFLAGS := -O3 -flto -fuse-linker-plugin -MMD
 CXXFLAGS := -Wall -std=c++17

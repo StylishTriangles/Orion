@@ -5,6 +5,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <assimp/scene.h>
 
 #include <shader.hpp>
 
@@ -30,17 +31,25 @@ struct Texture {
     std::string path;
 };
 
+struct SolidSurface {
+    glm::vec3 color_ambient;
+    glm::vec3 color_diffuse;
+    glm::vec3 color_specular;
+    float shininess, opacity;
+};
+
 class Mesh {
 public:
     /*  Mesh Data  */
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
+    SolidSurface base; // on top of this will be applied textures
     unsigned int VAO;
 
     /*  Functions  */
     // constructor
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures, SolidSurface base);
 
     // render the mesh
     void Draw(Shader shader);

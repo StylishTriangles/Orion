@@ -10,7 +10,7 @@ CMN_FILES := $(wildcard $(CMN_DIR)/*.cpp)
 CMN_OBJ_FILES := $(patsubst $(CMN_DIR)/%.cpp,$(CMN_OBJ_DIR)/%.o,$(CMN_FILES))
 
 CC := g++
-LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU -lassimp
+LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU -lassimp -ldl
 LDPATHS := -L/usr/lib64
 CPPFLAGS := -g -Og -MMD
 CXXFLAGS := -Wall -Wextra -std=c++17
@@ -32,7 +32,7 @@ debug:
 	@sed -i -r 's/^(CPPFLAGS :=).*/\1 $(CPPFLAGS_DEBUG)/' Makefile_debug
 	@sed -i -r 's/^(CXXFLAGS :=).*/\1 $(CXXFLAGS_DEBUG)/' Makefile_debug
 	@sed -i -r 's/^(CFLAGS :=).*/\1 $(CFLAGS_DEBUG)/' Makefile_debug
-	@echo "Successfully Created Makefile_debug, run with 'make -f Makefile_debug'"
+	@echo "Successfully created Makefile_debug, run with 'make -f Makefile_debug'"
 
 $(BUILD_DIR)/app: $(OBJ_FILES) $(CMN_OBJ_FILES)
 	$(CC) $(CPPFLAGS) -o $@ $^ $(LDPATHS) $(LDFLAGS)

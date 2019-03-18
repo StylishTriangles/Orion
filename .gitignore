@@ -2,8 +2,6 @@
 *.d
 
 # Compiled Object files
-build/
-build_debug/
 *.slo
 *.lo
 *.o
@@ -31,3 +29,10 @@ build_debug/
 *.exe
 *.out
 *.app
+
+# Build directories
+build/
+build_debug/
+
+# Copyrighted content
+assets/nanosuit/

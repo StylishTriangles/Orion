@@ -14,7 +14,7 @@ LDPATHS := -L/usr/lib64
 CPPFLAGS := -O3 -flto -fuse-linker-plugin -MMD
 CXXFLAGS := -Wall -std=c++17
 CFLAGS := 
-INCLUDE_PATHS := -I. -I./src
+INCLUDE_PATHS := -I. -I./src -I./src/vendor
 
 # debug settings
 BUILD_DIR_DEBUG := build_debug

@@ -1,7 +1,7 @@
 BUILD_DIR := build
 SRC_DIR := src
 OBJ_DIR := $(BUILD_DIR)/obj
-SRC_FILES := $(shell find src -name *.cpp -or -name *.c)
+SRC_FILES := $(shell find $(SRC_DIR) -name "*.cpp" -or -name "*.c")
 OBJ_FILES := $(shell echo "$(SRC_FILES)" | sed -E 's;$(SRC_DIR)/(\S*)(\.cpp|\.c);$(OBJ_DIR)/\1.o;g')
 CMN_DIR := common
 CMN_OBJ_DIR := $(BUILD_DIR)/common
@@ -11,7 +11,7 @@ CMN_OBJ_FILES := $(patsubst $(CMN_DIR)/%.cpp,$(CMN_OBJ_DIR)/%.o,$(CMN_FILES))
 CC := g++
 LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU -lassimp -ldl
 LDPATHS := -L/usr/lib64
-CPPFLAGS := -O3 -flto -fuse-linker-plugin -MMD
+CPPFLAGS := -O3 -MMD
 CXXFLAGS := -Wall -std=c++17
 CFLAGS := 
 INCLUDE_PATHS := -I. -I./src -I./src/vendor

@@ -9,16 +9,16 @@ CMN_FILES := $(wildcard $(CMN_DIR)/*.cpp)
 CMN_OBJ_FILES := $(patsubst $(CMN_DIR)/%.cpp,$(CMN_OBJ_DIR)/%.o,$(CMN_FILES))
 
 CC := g++
-LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU -lassimp -ldl
+LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU -lassimp -ldl -lstdc++fs
 LDPATHS := -L/usr/lib64
-CPPFLAGS := -O3 -MMD
+CPPFLAGS := -O3 -MMD -msse4.1 -g
 CXXFLAGS := -Wall -std=c++17
 CFLAGS := 
 INCLUDE_PATHS := -I. -I./src -I./src/vendor
 
 # debug settings
 BUILD_DIR_DEBUG := build_debug
-CPPFLAGS_DEBUG := -g -Og -MMD
+CPPFLAGS_DEBUG := -g -Og -MMD -msse4.1
 CXXFLAGS_DEBUG := -Wall -Wextra -std=c++17
 CFLAGS_DEBUG := 
 

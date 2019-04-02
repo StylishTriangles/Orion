@@ -10,6 +10,9 @@
 #include <camera.hpp>
 #include <model.hpp>
 
+#include <orion/rtc_parser.hpp>
+#include <orion/raytracer.hpp>
+
 #include <iostream>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -18,8 +21,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 600;
+const unsigned int SCR_HEIGHT = 400;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -35,6 +38,20 @@ GLFWwindow* window = NULL;
 
 int main()
 {
+    orion::RayTracer RT;
+    RT.traceRTC("assets/view_test.rtc");
+    return 0;
+
+    // load lights and camera settings
+    auto rtc_data = orion::parse_rtc("assets/view_test.rtc");
+
+    auto otg = [](orion::vec3f v) -> glm::vec3 {
+        return glm::vec3(v.x(), v.y(), v.z());
+    };
+    camera = Camera(otg(rtc_data.view_point), 
+                    otg(rtc_data.view_point - rtc_data.look_at),
+                    otg(rtc_data.vector_up));
+
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -74,6 +91,7 @@ int main()
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 
     // build and compile shaders
     // -------------------------
@@ -113,6 +131,7 @@ int main()
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        // glm::mat4 projection = glm::perspective(rtc_data.y_view, rtc_data.aspect_ratio, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
         ourShader.setMat4("vp", projection * view);
 

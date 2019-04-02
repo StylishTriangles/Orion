@@ -143,7 +143,7 @@ struct alignas(16) vec3f : public vec4f {
     vec3f projectionOf(vec3f v) {
         __m128 n = _mm_dp_ps(vec, v.vec, 0x7f);
         __m128 d = _mm_dp_ps(vec,   vec, 0x7f);
-        return v.vec - (n/d)*vec;
+        return (n/d)*vec;
     }
 };
 

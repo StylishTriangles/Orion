@@ -41,15 +41,20 @@ public:
 
     const Triangle* intersect(const vec3f &orig, 
                               const vec3f &dir,
-                              float &t) const
+                              float &t,
+                              float &u,
+                              float &v) const
     {
         const Triangle *ret = nullptr;
+        t = 1e8;
         for (Triangle const& tri: triangles) {
-            float u,v; // we will not use these atm
-            float tcurr = 1e8;
-            bool section = tri.intersect(orig, dir, tcurr, u, v);
+            float ucurr, vcurr;
+            float tcurr;
+            bool section = tri.intersect(orig, dir, tcurr, ucurr, vcurr);
             if (section && tcurr < t) {
                 t = tcurr;
+                u = ucurr;
+                v = vcurr;
                 ret = &tri;
             }
         }

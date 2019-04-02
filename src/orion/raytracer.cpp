@@ -76,19 +76,46 @@ void RayTracer::traceRTC(const char* rtc_file_name, const char* path_to_image)
 
 vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth)
 {
+    vec3f color = 0.0f;
     // nearest intersection
     float tnear = F_INFINITY;
-    vec3f color = 0.0f;
-    TracedMesh *pMesh = nullptr;
-    Triangle *pTriangle = nullptr;
-    // for (auto const &mesh: m.meshes) {
-    //     float t = F_INFINITY;
-        
-
-    // }
-    m.intersect(origin, dir, tnear, color);
-    return color;
+    const TracedMesh *pMesh = nullptr;
+    const Triangle *pTriangle = nullptr;
+    for (TracedMesh const& tm: m.meshes) {
+        float u,v; // we will not use these atm
+        float t;
+        const Triangle* tri = tm.intersect(origin, dir, t, u, v);
+        if (tri && t < tnear) {
+            tnear = t;
+            pMesh = &tm;
+            pTriangle = tri;
+        }
+    }
+    // triangle not hit
+    if (!pMesh)
+        return color;
     
+    // bias will be used to move our ray away from the surface on reflection
+    const float bias = 1e-5;
+    // calculate normal to surface
+    vec3f normal = pTriangle->normal();
+    normal.normalize();
+    // calculate point where ray hits the surface
+    vec3f hitPos = origin + dir * tnear;
+
+    // compute shadow rays
+    vec3f lightDir = rtc.lights[0].position - hitPos;
+    lightDir.normalize();
+    vec3f lightCol = 1.0f;
+
+    vec3f colorAmbient = pMesh->baseColor.color_ambient;
+
+    float diff = max(normal.dot(lightDir), 0.0f);
+    vec3f colorDiffuse = lightCol * pMesh->baseColor.color_diffuse * diff;
+
+    color = colorAmbient + colorDiffuse;
+
+    return color;
 }
 
 void RayTracer::calculateCameraVectors(const rtc_data &rtcd, vec3f& vecFront, vec3f& vecUp, vec3f& vecRight)
@@ -102,8 +129,8 @@ void RayTracer::calculateCameraVectors(const rtc_data &rtcd, vec3f& vecFront, ve
     // The top and right vectors will point to edges of the screen.
     // So -1 * vecUp is the bottom edge and 1 * vecUp is the top one
 
-    // Project vecUp onto vecFront so front and up form a right angle
-    vecUp = vecFront.projectionOf(vecUp);
+    // Perform Gram-Schmidt orogonalization of 2 vectors
+    vecUp = vecUp - vecFront.projectionOf(vecUp);
 
     // Normalize our vectors
     vecUp.normalize();

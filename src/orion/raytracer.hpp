@@ -3,8 +3,9 @@
 
 #include <vector>
 
-#include <orion/math.hpp>
 #include <orion/geometry.hpp>
+#include <orion/light.hpp>
+#include <orion/math.hpp>
 #include <orion/model.hpp>
 #include <orion/rtc_parser.hpp>
 

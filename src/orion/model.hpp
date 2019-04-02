@@ -35,22 +35,6 @@ public:
     {
         loadModel(path);
     }
-
-    bool intersect(const vec3f &orig, 
-                   const vec3f &dir,
-                   float &t,
-                   vec3f& color) const
-    {
-        for (TracedMesh const& tm: meshes) {
-            // float u,v; // we will not use these atm
-            const Triangle* tri = tm.intersect(orig, dir, t);
-            if (tri) {
-                color = tm.baseColor.color_ambient;
-                return true;
-            }
-        }
-        return false;
-    }
     
 private:
     /*  Functions   */

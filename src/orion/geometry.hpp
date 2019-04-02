@@ -43,17 +43,15 @@ public:
 
 // Triangle class to satisfy all mesh needs.
 // Should be aligned to 16B.
-// We could use 64B alignment to fill the whole cache line
-// but it would effectively use 33% more RAM/cache
 class Triangle {
 public:
     // Triangle members
-    vec3f v0, v1, v2;
+    vec3f v0, e1, e2;
 
     Triangle() = default;
 
     Triangle(vec3f v0, vec3f v1, vec3f v2) :
-        v0(v0), v1(v1), v2(v2) {}
+        v0(v0), e1(v1-v0), e2(v2-v0) {}
 
     /**
      * Tomas Moller and Ben Trumbore method.
@@ -71,12 +69,12 @@ public:
                    float &v
     ) const {
         const float eps = 0.000001f;
-        vec3f e1, e2, tvec, pvec, qvec;
+        vec3f tvec, pvec, qvec;
         float det, inv_det;
 
         // Find vectors for 2 edges sharing v0
-        e1 = v1 - v0;
-        e2 = v2 - v0;
+        // e1 = v1 - v0; // Removed due to preprocessing of these values
+        // e2 = v2 - v0;
 
         // begin calculating determinant - also used to create u parameter
         pvec = dir.cross(e2);
@@ -110,6 +108,11 @@ public:
         t = e2.dot(qvec) * inv_det;
 
         return 1;
+    }
+
+    // @returns normal to the surface of triangle
+    vec3f normal() const {
+        return e1.cross(e2);
     }
 };
 

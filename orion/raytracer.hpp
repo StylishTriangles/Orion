@@ -11,6 +11,8 @@
 
 namespace orion {
 
+class RayTracer;
+
 // The entry point of Orion's raytracing.
 // RayTracer class contains all scene information.
 class RayTracer

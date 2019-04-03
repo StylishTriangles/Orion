@@ -27,10 +27,10 @@ public:
     bool intersect(const vec3f &rayorig, const vec3f &raydir, float &t0, float &t1) const
     {
         vec3f l = center - rayorig;
-        float tca = l.dot(raydir);
+        float tca = dot(l, raydir);
         if (tca < 0) 
             return false;
-        float d2 = l.dot(l) - tca * tca;
+        float d2 = dot(l, l) - tca * tca;
         if (d2 > radius2) 
             return false;
         float thc = sqrt(radius2 - d2);
@@ -77,10 +77,10 @@ public:
         // e2 = v2 - v0;
 
         // begin calculating determinant - also used to create u parameter
-        pvec = dir.cross(e2);
+        pvec = cross(dir, e2);
 
         // If determinant is near 0, ray lies in plane of triangle
-        det = e1.dot(pvec);
+        det = dot(e1, pvec);
 
         /*** we skip the culling branch so that we trace 2-sided triangles ***/
 
@@ -92,27 +92,27 @@ public:
         tvec = orig - v0;
 
         // Calculate U parameter and test bounds
-        u = tvec.dot(pvec) * inv_det;
+        u = dot(tvec, pvec) * inv_det;
         if (u < 0 || u > 1)
             return 0;
 
         // Prepare to test v parameter
-        qvec = tvec.cross(e1);
+        qvec = cross(tvec, e1);
 
         // Calculate v parameter and test bounds
-        v = dir.dot(qvec) * inv_det;
+        v = dot(dir, qvec) * inv_det;
         if (v < 0 || u + v > 1)
             return 0;
         
         // Calculate t, ray intersects triangle
-        t = e2.dot(qvec) * inv_det;
+        t = dot(e2, qvec) * inv_det;
 
         return 1;
     }
 
     // @returns normal to the surface of triangle
     vec3f normal() const {
-        return e1.cross(e2);
+        return cross(e1, e2);
     }
 };
 

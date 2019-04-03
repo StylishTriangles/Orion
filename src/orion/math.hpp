@@ -10,6 +10,10 @@
 
 namespace orion {
 
+struct alignas(16) vec4f;
+struct alignas(16) vec3f;
+struct vec2f;
+
 struct alignas(16) vec4f 
 {
     // vec4f constructors
@@ -18,9 +22,9 @@ struct alignas(16) vec4f
     vec4f() = default;
 
     // Floats are stored in reverse order because it's how SSE works
-    vec4f(float x, float y, float z, float w) { vec = _mm_set_ps(w,z,y,x); }
+    vec4f(float x, float y, float z, float w) : vec(_mm_set_ps(w,z,y,x)) {}
 
-    vec4f(float xx) { vec = _mm_set_ps1(xx);}
+    vec4f(float xx) : vec(_mm_set_ps1(xx)) {}
 
     vec4f(__m128 xmm) : vec(xmm) {}
 
@@ -51,15 +55,6 @@ struct alignas(16) vec4f
 
     // vec4f Math functions
 
-    // dot - compute dot product of two vectors
-    float dot(vec4f a, vec4f b) const {
-        // constant explanation:
-        // 0xf1 == 0b11110001
-        // Upper four bits are used to determine which elements of xmm vector will be used in the dot product
-        // Lower four bits determine which elements of returned xmm vector will contain the result
-        return _mm_cvtss_f32(_mm_dp_ps(a.vec, b.vec, 0xf1));
-    }
-
     void normalize() {
 		__m128 dp = _mm_dp_ps(vec, vec, 0xFF); 
 		dp = _mm_rsqrt_ps(dp);
@@ -89,6 +84,8 @@ struct alignas(16) vec3f : public vec4f {
 
     vec3f(__m128 xmm) : vec4f(xmm) {}
 
+    explicit vec3f(vec4f v4) : vec4f(v4) {}
+
     vec3f(const vec3f & origin) = default;
 
     ~vec3f() = default;
@@ -106,27 +103,6 @@ struct alignas(16) vec3f : public vec4f {
 
     /** vec3f math functions **/
 
-    // cross product of two 3-element vectors.
-    // Below formula is explained here: 
-    // http://threadlocalmutex.com/?p=8
-    vec3f cross(vec3f vb) const {
-        __m128 const &a = vec;
-        __m128 const &b = vb.vec;
-
-        __m128 a_yzx = _mm_shuffle_ps(a, a, _MM_SHUFFLE(3, 0, 2, 1));
-        __m128 b_yzx = _mm_shuffle_ps(b, b, _MM_SHUFFLE(3, 0, 2, 1));
-        __m128 c = _mm_sub_ps(_mm_mul_ps(a, b_yzx), _mm_mul_ps(a_yzx, b));
-        return _mm_shuffle_ps(c, c, _MM_SHUFFLE(3, 0, 2, 1));
-    }
-
-    float dot(vec3f b) const {
-        // constant explanation:
-        // 0x71 == 0b01110001
-        // Upper four bits are used to determine which elements of xmm vector will be used in the dot product
-        // Lower four bits determine which elements of returned xmm vector will contain the result
-        return _mm_cvtss_f32(_mm_dp_ps(vec, b.vec, 0x71));
-    }
-
     void normalize() {
         __m128 dp = _mm_dp_ps(vec, vec, 0x7F); 
         dp = _mm_rsqrt_ps(dp);
@@ -137,13 +113,6 @@ struct alignas(16) vec3f : public vec4f {
         __m128 dp = _mm_dp_ps(vec, vec, 0x7F); 
         dp = _mm_rsqrt_ps(dp);
         return _mm_mul_ps(vec, dp);
-    }
-
-    // compute projection of vector v onto this.
-    vec3f projectionOf(vec3f v) {
-        __m128 n = _mm_dp_ps(vec, v.vec, 0x7f);
-        __m128 d = _mm_dp_ps(vec,   vec, 0x7f);
-        return (n/d)*vec;
     }
 };
 
@@ -167,32 +136,101 @@ struct vec2f {
     float vec[2];
 };
 
-
 // vec4f operators
-vec4f operator * (vec4f lhs, vec4f rhs);
+static inline vec4f operator * (vec4f lhs, vec4f rhs) {
+    return lhs.vec * rhs.vec;
+}
 
-vec4f operator * (float x, vec4f v);
+static inline vec4f operator / (vec4f lhs, vec4f rhs) {
+    return lhs.vec / rhs.vec;
+}
 
-vec4f operator + (vec4f lhs, vec4f rhs);
+static inline vec4f operator + (vec4f lhs, vec4f rhs) {
+    return lhs.vec + rhs.vec;
+}
 
-vec4f operator + (vec4f lhs, float rhs);
+static inline vec4f operator - (vec4f lhs, vec4f rhs) {
+    return lhs.vec + rhs.vec;
+}
 
-vec4f operator + (float lhs, vec4f rhs);
-
-vec4f operator - (vec4f lhs, vec4f rhs);
+static inline vec4f operator - (vec4f un) {
+    const __m128 minusZero = _mm_set1_ps(-0.0f);
+    return _mm_xor_ps(un.vec, minusZero);
+}
 
 // vec3f operators
-vec3f operator * (vec3f lhs, vec3f rhs);
+static inline vec3f operator * (vec3f lhs, vec3f rhs) {
+    return lhs.vec * rhs.vec;
+}
 
-vec3f operator * (float x, vec3f v);
+static inline vec3f operator / (vec3f lhs, vec3f rhs) {
+    return lhs.vec / rhs.vec;
+}
 
-vec3f operator + (vec3f lhs, vec3f rhs);
+static inline vec3f operator + (vec3f lhs, vec3f rhs) {
+    return lhs.vec + rhs.vec;
+}
 
-vec3f operator + (vec3f lhs, float rhs);
+static inline vec3f operator - (vec3f lhs, vec3f rhs) {
+    return lhs.vec - rhs.vec;
+}
 
-vec3f operator + (float lhs, vec3f rhs);
+static inline vec3f operator - (vec3f un) {
+    const __m128 minusZero = _mm_set1_ps(-0.0f);
+    return _mm_xor_ps(un.vec, minusZero);
+}
 
-vec3f operator - (vec3f lhs, vec3f rhs);
+// Math functions
+static inline vec4f normalize(vec4f v) {
+    __m128 dp = _mm_dp_ps(v.vec, v.vec, 0xFF); 
+    dp = _mm_rsqrt_ps(dp);
+    return _mm_mul_ps(v.vec, dp);
+}
+
+static inline vec3f normalize(vec3f v) {
+    __m128 dp = _mm_dp_ps(v.vec, v.vec, 0x7F); 
+    dp = _mm_rsqrt_ps(dp);
+    return _mm_mul_ps(v.vec, dp);
+}
+
+// cross product of two 3D vectors.
+// Below formula is explained here: 
+// http://threadlocalmutex.com/?p=8
+static inline vec3f cross(vec3f va, vec3f vb) {
+    __m128 const &a = va.vec;
+    __m128 const &b = vb.vec;
+
+    __m128 a_yzx = _mm_shuffle_ps(a, a, _MM_SHUFFLE(3, 0, 2, 1));
+    __m128 b_yzx = _mm_shuffle_ps(b, b, _MM_SHUFFLE(3, 0, 2, 1));
+    __m128 c = _mm_sub_ps(_mm_mul_ps(a, b_yzx), _mm_mul_ps(a_yzx, b));
+    return _mm_shuffle_ps(c, c, _MM_SHUFFLE(3, 0, 2, 1));
+}
+
+// calculate dot product of two 4-element vectors
+static inline float dot(vec4f a, vec4f b) {
+    // constant explanation:
+    // 0xf1 == 0b11110001
+    // Upper four bits are used to determine which elements of xmm vector will be used in the dot product
+    // Lower four bits determine which elements of returned xmm vector will contain the result
+    return _mm_cvtss_f32(_mm_dp_ps(a.vec, b.vec, 0xf1));
+}
+
+// dot product of two 3-element vectors
+static inline float dot(vec3f a, vec3f b) {
+    // constant explanation:
+    // 0x71 == 0b01110001
+    // Upper four bits are used to determine which elements of xmm vector will be used in the dot product
+    // Lower four bits determine which elements of returned xmm vector will contain the result
+    return _mm_cvtss_f32(_mm_dp_ps(a.vec, b.vec, 0x71));
+}
+
+// calculate vector orthogonal to a 
+static inline vec3f orthogonalize(vec3f a, vec3f b) {
+    __m128 n = _mm_dp_ps(a.vec, b.vec, 0x7f);
+    __m128 d = _mm_dp_ps(a.vec, a.vec, 0x7f);
+    return b.vec - (n/d)*a.vec;
+}
+
 
 }; // orion
 

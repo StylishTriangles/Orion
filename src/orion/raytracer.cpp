@@ -110,7 +110,7 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
 
     vec3f colorAmbient = pMesh->baseColor.color_ambient;
 
-    float diff = max(normal.dot(lightDir), 0.0f);
+    float diff = max(dot(normal, lightDir), 0.0f);
     vec3f colorDiffuse = lightCol * pMesh->baseColor.color_diffuse * diff;
 
     color = colorAmbient + colorDiffuse;
@@ -130,7 +130,7 @@ void RayTracer::calculateCameraVectors(const rtc_data &rtcd, vec3f& vecFront, ve
     // So -1 * vecUp is the bottom edge and 1 * vecUp is the top one
 
     // Perform Gram-Schmidt orogonalization of 2 vectors
-    vecUp = vecUp - vecFront.projectionOf(vecUp);
+    vecUp = orthogonalize(vecFront, vecUp);
 
     // Normalize our vectors
     vecUp.normalize();
@@ -138,7 +138,7 @@ void RayTracer::calculateCameraVectors(const rtc_data &rtcd, vec3f& vecFront, ve
 
     // Construct the right vector as the cross product of up and front.
     // A cross product of 2 unit vectors will also be unit.
-    vecRight = vecFront.cross(vecUp);
+    vecRight = cross(vecFront, vecUp);
 
     // Let's transform those vectors to reflect our screen better
     // so that we can use them  as ray directions.

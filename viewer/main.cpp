@@ -38,9 +38,9 @@ GLFWwindow* window = NULL;
 
 int main()
 {
-    orion::RayTracer RT;
-    RT.traceRTC("assets/view_test.rtc");
-    return 0;
+    // orion::RayTracer RT;
+    // RT.traceRTC("assets/view_test.rtc");
+    // return 0;
 
     // load lights and camera settings
     auto rtc_data = orion::parse_rtc("assets/view_test.rtc");
@@ -100,7 +100,7 @@ int main()
 
     // load models
     // -----------
-    Model ourModel = *(new Model("assets/view_test.obj"));
+    Model ourModel = *(new Model("assets/nanosuit/nanosuit.obj"));
     std::cout << "Models loaded successfully!" << std::endl;
 
     

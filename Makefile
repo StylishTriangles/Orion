@@ -17,6 +17,7 @@ CPPFLAGS := -O3 -MMD -msse4.1
 CXXFLAGS := -Wall -Wextra -std=c++17
 CFLAGS := 
 INCLUDE_PATHS := -I. -I./viewer -I./viewer/vendor
+
 LDFLAGS_RAYTRACER := -lassimp -ldl -lstdc++fs
 LDFLAGS_VIEWER := -lGLEW -lglfw3 -lGL -lGLU -lassimp -ldl -lstdc++fs
 

@@ -9,15 +9,6 @@ using namespace std;
 
 namespace orion {
 
-// F_INFINITY is a large value at which rays cease to exist
-static const float F_INFINITY = 1e8;
-
-template <typename T>
-static T min(const T& a, const T& b)
-{
-    return (a<b)?a:b;
-}
-
 // vec3f RayTracer::trace(const vec3f &orig, 
 //                    const vec3f &dir,
 //                    float &t) const 
@@ -74,25 +65,17 @@ void RayTracer::traceRTC(const char* rtc_file_name, const char* path_to_image)
     savePPM(path_to_image, image);
 }
 
-vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth)
+vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth, bool shadow)
 {
     vec3f color = 0.0f;
+    if (shadow)
+        color = 1.0f;
     // nearest intersection
     float tnear = F_INFINITY;
-    const TracedMesh *pMesh = nullptr;
-    const Triangle *pTriangle = nullptr;
-    for (TracedMesh const& tm: m.meshes) {
-        float u,v; // we will not use these atm
-        float t;
-        const Triangle* tri = tm.intersect(origin, dir, t, u, v);
-        if (tri && t < tnear) {
-            tnear = t;
-            pMesh = &tm;
-            pTriangle = tri;
-        }
-    }
+    float u, v;
+    const Triangle *pTriangle = m.intersect(origin, dir, tnear, u, v);
     // triangle not hit
-    if (!pMesh)
+    if (!pTriangle)
         return color;
     
     // bias will be used to move our ray away from the surface on reflection
@@ -103,17 +86,9 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
     // calculate point where ray hits the surface
     vec3f hitPos = origin + dir * tnear;
 
-    // compute shadow rays
-    vec3f lightDir = rtc.lights[0].position - hitPos;
-    lightDir.normalize();
-    vec3f lightCol = 1.0f;
-
-    vec3f colorAmbient = pMesh->baseColor.color_ambient;
-
-    float diff = max(dot(normal, lightDir), 0.0f);
-    vec3f colorDiffuse = lightCol * pMesh->baseColor.color_diffuse * diff;
-
-    color = colorAmbient + colorDiffuse;
+    for (Light const& lght: rtc.lights) {
+        color += pTriangle->pMaterial->color(dir, normal, hitPos, lght);
+    }
 
     return color;
 }

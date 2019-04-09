@@ -1,19 +1,14 @@
 #ifndef ORION_MESH_HPP
 #define ORION_MESH_HPP
 
+#include <memory>
 #include <vector>
 
 #include <orion/math.hpp>
 #include <orion/geometry.hpp>
+#include <orion/material.hpp>
 
 namespace orion {
-
-struct SolidSurface {
-    vec3f color_ambient;
-    vec3f color_diffuse;
-    vec3f color_specular;
-    float shininess, opacity;
-};
 
 // TracedMesh is a triangle mesh tailored for raytracing.
 // It's based on the Mesh class and has a name distingiushing it from the original.
@@ -23,7 +18,7 @@ class TracedMesh
 public:
     /*  Mesh Data  */
     std::vector<Triangle> triangles;
-    SolidSurface baseColor; // on top of this will be applied textures
+    std::unique_ptr<Material> pMat; // on top of this will be applied textures
 
     // Textures are cut from this Mesh at the moment
 
@@ -31,10 +26,29 @@ public:
     // constructor, default
     TracedMesh() = default;
 
+    // copy constructor performs a deep copy of TracedMesh
+    TracedMesh(const TracedMesh& tm) :
+        triangles( tm.triangles ),
+        pMat( new Material( *tm.pMat ))
+    {
+        // reassign pointers because pMat changed
+        assingMaterialToTriangles();
+    }
+
+    // move constructor
+    TracedMesh(TracedMesh&& tm) :
+        triangles( std::move(tm.triangles) ),
+        pMat( std::move(tm.pMat) ) 
+    {
+        // no need to modify material pointers since we are just moving stuff around
+    }
+
     // constructor
-    TracedMesh(std::vector<Triangle> triangles, SolidSurface baseColor) {
-        this->triangles = triangles;
-        this->baseColor = baseColor;
+    TracedMesh(const std::vector<Triangle> &triangles, const Material &mat) :
+        triangles(triangles), 
+        pMat(new Material(mat))
+    {
+        assingMaterialToTriangles();
     }
     
     ~TracedMesh() = default;
@@ -46,10 +60,9 @@ public:
                               float &v) const
     {
         const Triangle *ret = nullptr;
-        t = 1e8;
         for (Triangle const& tri: triangles) {
+            float tcurr = F_INFINITY;
             float ucurr, vcurr;
-            float tcurr;
             bool section = tri.intersect(orig, dir, tcurr, ucurr, vcurr);
             if (section && tcurr < t) {
                 t = tcurr;
@@ -60,6 +73,14 @@ public:
         }
         return ret;
     }
+
+private:
+    void assingMaterialToTriangles() {
+        for (Triangle& tri: this->triangles) {
+            tri.pMaterial = pMat.get();
+        }
+    }
+
 };
 
 };

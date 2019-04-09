@@ -6,13 +6,19 @@
 #ifndef ORION_MATH_HPP
 #define ORION_MATH_HPP
 
+#include <limits>
+
 #include <immintrin.h>
 
 namespace orion {
 
 struct alignas(16) vec4f;
 struct alignas(16) vec3f;
-struct vec2f;
+struct alignas(8)  vec2f;
+
+/** constants **/
+// Flating point infinity or huge value
+const float F_INFINITY = std::numeric_limits<float>::infinity();
 
 struct alignas(16) vec4f 
 {
@@ -93,6 +99,7 @@ struct alignas(16) vec3f : public vec4f {
 
     // vec3f arithmetic operators
 
+    vec3f& operator += (vec3f m) {vec += m.vec; return *this;}
     vec3f& operator *= (vec3f m) {vec *= m.vec; return *this;}
     vec3f& operator /= (vec3f m) {vec /= m.vec; return *this;}
 
@@ -118,7 +125,7 @@ struct alignas(16) vec3f : public vec4f {
 
 // Basic structure to hold 2 floats
 // adapted to have similar API as vec4f
-struct vec2f {
+struct alignas(8) vec2f {
     vec2f() = default;
 
     vec2f(float x, float y) {vec[0] = x; vec[1] = y;}
@@ -231,6 +238,22 @@ static inline vec3f orthogonalize(vec3f a, vec3f b) {
     return b.vec - (n/d)*a.vec;
 }
 
+// For a given incident vector I and surface normal N reflect returns the reflection direction calculated as I - 2.0 * dot(N, I) * N.
+// N should be normalized in order to achieve the desired result.
+static inline vec3f reflect(vec3f I, vec3f N) {
+    return I - 2.0f * dot(N, I) * N;
+}
+
+// utility functions
+template <typename T>
+T min(const T& a, const T& b) {
+    return (b<a)?b:a;
+}
+
+template <typename T>
+T max(const T& a, const T& b) {
+    return (a<b)?b:a;
+}
 
 }; // orion
 

@@ -18,14 +18,6 @@ namespace orion {
 class TracedModel
 {
 public:
-    /*  Model Data */
-
-    // Temporarily removed as we are not utilizing textures
-    // std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-    std::vector<TracedMesh> meshes;
-    std::string directory;
-    bool gammaCorrection;
-
     /*  Functions   */
     // constructor, default
     TracedModel() = default;
@@ -36,23 +28,31 @@ public:
         loadModel(path);
     }
 
-    bool intersect(const vec3f &orig, 
-                   const vec3f &dir,
-                   float &t,
-                   vec3f& color) const
-    {
+    const Triangle* intersect(const vec3f& origin, const vec3f &dir, float &t, float &u, float &v) {
+        const Triangle *pTriangle = nullptr;
         for (TracedMesh const& tm: meshes) {
-            // float u,v; // we will not use these atm
-            const Triangle* tri = tm.intersect(orig, dir, t);
-            if (tri) {
-                color = tm.baseColor.color_ambient;
-                return true;
+            float ct = F_INFINITY;
+            float cu, cv;
+            const Triangle* tri = tm.intersect(origin, dir, ct, cu, cv);
+            if (tri && ct < t) {
+                t = ct;
+                u = cu;
+                v = cv;
+                pTriangle = tri;
             }
         }
-        return false;
+        return pTriangle;
     }
     
 private:
+    /*  Model Data */
+
+    // Temporarily removed as we are not utilizing textures
+    // std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+    std::vector<TracedMesh> meshes;
+    std::string directory;
+    bool gammaCorrection;
+
     /*  Functions   */
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     void loadModel(std::string const &path);

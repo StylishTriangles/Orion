@@ -3,12 +3,15 @@
 
 #include <vector>
 
-#include <orion/math.hpp>
 #include <orion/geometry.hpp>
+#include <orion/light.hpp>
+#include <orion/math.hpp>
 #include <orion/model.hpp>
 #include <orion/rtc_parser.hpp>
 
 namespace orion {
+
+class RayTracer;
 
 // The entry point of Orion's raytracing.
 // RayTracer class contains all scene information.
@@ -23,7 +26,7 @@ public:
 
 protected:
     void savePPM(const char* path_to_image, const std::vector<std::vector<vec3f> > &image);
-    vec3f trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth);
+    vec3f trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth, bool shadow = false);
 
     /** 
      * @brief Calculate camera vectors based on loaded rtc.

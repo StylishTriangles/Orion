@@ -9,15 +9,6 @@ using namespace std;
 
 namespace orion {
 
-// F_INFINITY is a large value at which rays cease to exist
-static const float F_INFINITY = 1e8;
-
-template <typename T>
-static T min(const T& a, const T& b)
-{
-    return (a<b)?a:b;
-}
-
 // vec3f RayTracer::trace(const vec3f &orig, 
 //                    const vec3f &dir,
 //                    float &t) const 
@@ -74,21 +65,32 @@ void RayTracer::traceRTC(const char* rtc_file_name, const char* path_to_image)
     savePPM(path_to_image, image);
 }
 
-vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth)
+vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth, bool shadow)
 {
+    vec3f color = 0.0f;
+    if (shadow)
+        color = 1.0f;
     // nearest intersection
     float tnear = F_INFINITY;
-    vec3f color = 0.0f;
-    TracedMesh *pMesh = nullptr;
-    Triangle *pTriangle = nullptr;
-    // for (auto const &mesh: m.meshes) {
-    //     float t = F_INFINITY;
-        
-
-    // }
-    m.intersect(origin, dir, tnear, color);
-    return color;
+    float u, v;
+    const Triangle *pTriangle = m.intersect(origin, dir, tnear, u, v);
+    // triangle not hit
+    if (!pTriangle)
+        return color;
     
+    // bias will be used to move our ray away from the surface on reflection
+    const float bias = 1e-5;
+    // calculate normal to surface
+    vec3f normal = pTriangle->normal();
+    normal.normalize();
+    // calculate point where ray hits the surface
+    vec3f hitPos = origin + dir * tnear;
+
+    for (Light const& lght: rtc.lights) {
+        color += pTriangle->pMaterial->color(dir, normal, hitPos, lght);
+    }
+
+    return color;
 }
 
 void RayTracer::calculateCameraVectors(const rtc_data &rtcd, vec3f& vecFront, vec3f& vecUp, vec3f& vecRight)
@@ -102,8 +104,8 @@ void RayTracer::calculateCameraVectors(const rtc_data &rtcd, vec3f& vecFront, ve
     // The top and right vectors will point to edges of the screen.
     // So -1 * vecUp is the bottom edge and 1 * vecUp is the top one
 
-    // Project vecUp onto vecFront so front and up form a right angle
-    vecUp = vecFront.projectionOf(vecUp);
+    // Perform Gram-Schmidt orogonalization of 2 vectors
+    vecUp = orthogonalize(vecFront, vecUp);
 
     // Normalize our vectors
     vecUp.normalize();
@@ -111,7 +113,7 @@ void RayTracer::calculateCameraVectors(const rtc_data &rtcd, vec3f& vecFront, ve
 
     // Construct the right vector as the cross product of up and front.
     // A cross product of 2 unit vectors will also be unit.
-    vecRight = vecFront.cross(vecUp);
+    vecRight = cross(vecFront, vecUp);
 
     // Let's transform those vectors to reflect our screen better
     // so that we can use them  as ray directions.

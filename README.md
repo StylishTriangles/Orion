@@ -1,23 +1,32 @@
 # Orion
-As the rays are cast by Orion, the surfaces are lit by the power of raytracing
+Simple raytracer.
 
 # Requirements
 ## general
-- OpenGL 3.3 compatible hardware
-- g++8
+- OpenGL 3.3 compatible hardware*
+- g++ (with c++17 support)
 - make
 ## libs
-- GLEW 
-- glfw3
-- GL
-- GLU
+- GLEW*
+- glfw3*
+- GL*
+- GLU*
 - assimp
 ## other
-- GLM
-- GLAD (Included in this repository for GL 3.3 Core)
+- GLM*
+- GLAD* (Included in this repository for GL 3.3 Core)
 
-`NOTE:` If you are compiling libraries from sources remember to modify `LDPATHS` in Makefile to contain paths with compiled libs
+`*` - denotes libraries required by viewer and are not necessary for the raytracer.
+
+`NOTE:` If you are compiling libraries from sources remember to modify `LDPATHS` in Makefile to contain paths with compiled libs.
 
 # Building and running
-1. `@> make`
-2. `@> ./build/app`
+## Raytracer
+1. `@> make raytracer`
+2. `@> ./build/raytracer path/to/file.rtc`
+## Viewer
+1. `@> make viewer`
+2. `@> ./build/rviewer`
+
+# To do
+shallow BVH

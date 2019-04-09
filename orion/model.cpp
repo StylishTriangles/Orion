@@ -5,8 +5,9 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <orion/model.hpp>
 #include <orion/geometry.hpp>
+#include <orion/material.hpp>
+#include <orion/model.hpp>
 
 #include <cassert>
 
@@ -128,7 +129,8 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
                               vertices[face.mIndices[2]]};
         Triangle t = Triangle(vertexes[0].Position,
                               vertexes[1].Position,
-                              vertexes[2].Position);
+                              vertexes[2].Position,
+                              nullptr); // TODO: move triangle creation to mesh
         triangles.push_back(t);
     }
     // process materials
@@ -155,11 +157,12 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
     textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
 ***/
 
-    aiColor3D Ka, Kd, Ks;
+    aiColor3D Ka, Kd, Ks, Ke;
     float shininess, opacity;
     material->Get(AI_MATKEY_COLOR_AMBIENT, Ka);
     material->Get(AI_MATKEY_COLOR_DIFFUSE, Kd);
     material->Get(AI_MATKEY_COLOR_SPECULAR, Ks);
+    material->Get(AI_MATKEY_COLOR_EMISSIVE, Ke);
     material->Get(AI_MATKEY_SHININESS, shininess);
     material->Get(AI_MATKEY_OPACITY, opacity);
 
@@ -170,11 +173,14 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
     base.color_ambient = aiToV3F(Ka);
     base.color_diffuse = aiToV3F(Kd);
     base.color_specular = aiToV3F(Ks);
+    base.color_emissive = aiToV3F(Ke);
     base.shininess = shininess;
     base.opacity = opacity;
+
+    Material m(base);
     
     // return a mesh object created from the extracted mesh data
-    return TracedMesh(triangles, base);
+    return TracedMesh(triangles, m);
 }
 
 }; // namespace orion

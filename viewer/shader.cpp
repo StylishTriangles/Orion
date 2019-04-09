@@ -1,6 +1,7 @@
-#include <shader.hpp>
 #include <fstream>
 #include <sstream>
+
+#include <viewer/shader.hpp>
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath, const char* geometryPath)
 {

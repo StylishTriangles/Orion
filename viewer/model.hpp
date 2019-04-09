@@ -1,5 +1,3 @@
-
-
 #ifndef MODEL_H
 #define MODEL_H
 
@@ -11,8 +9,6 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <mesh.hpp>
-#include <shader.hpp>
 
 #include <string>
 #include <fstream>
@@ -20,6 +16,9 @@
 #include <iostream>
 #include <map>
 #include <vector>
+
+#include <viewer/mesh.hpp>
+#include <viewer/shader.hpp>
 
 unsigned int TextureFromFile(const char *path, const std::string &directory, bool gamma = false);
 

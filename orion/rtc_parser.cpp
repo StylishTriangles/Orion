@@ -64,15 +64,17 @@ rtc_data parse_rtc(const char* path)
 
     string line;
     int line_count = 0;
+    int empty_lines = 0;
     while(getline(infile, line))
     {
+        line = trim(line);
         if (line[0] != '#' and !line.empty()) {
             istringstream iss(line);
             line_count++;
             if (line_count == 1) {
-                rtc.obj_file = trim(line);
+                rtc.obj_file = line;
             } else if (line_count == 2) {
-                rtc.texture_file = trim(line);
+                rtc.texture_file = line;
             } else if (line_count == 3) { // recursion level
                 iss >> rtc.recursion_level;
             } else if (line_count == 4) { // resolution
@@ -93,7 +95,7 @@ rtc_data parse_rtc(const char* path)
                 char c;
                 iss >> c;
                 if (c != 'L' and c != 'l') {
-                    printf("Invalid character '%c' in line %d `%s`\n", c, line_count, line.c_str());
+                    printf("Invalid character '%c' in line %d `%s`\n", c, line_count + empty_lines, line.c_str());
                 } else {
                     vec3f pos = load_vec3(iss);
                     vec3f col = load_vec3(iss);
@@ -103,15 +105,15 @@ rtc_data parse_rtc(const char* path)
 
                     Light l;
                     l.position = pos;
-                    l.ambient = col;
-                    l.diffuse = col;
-                    l.specular = col;
+                    l.color= col;
                     l.intensity = intensity;
 
                     rtc.lights.push_back(l);
                 }
             }
-        }  // Skip line if empty or comment
+        } else { // Skip line if empty or comment
+            empty_lines++;
+        } 
     }
 
     return rtc;

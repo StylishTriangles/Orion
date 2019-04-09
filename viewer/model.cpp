@@ -8,8 +8,6 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include <mesh.hpp>
-#include <shader.hpp>
 
 #include <string>
 #include <fstream>
@@ -18,7 +16,9 @@
 #include <map>
 #include <vector>
 
-#include <model.hpp>
+#include <viewer/mesh.hpp>
+#include <viewer/shader.hpp>
+#include <viewer/model.hpp>
 
 using namespace std;
 

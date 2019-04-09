@@ -7,7 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <assimp/scene.h>
 
-#include <shader.hpp>
+#include <viewer/shader.hpp>
 
 #include <string>
 #include <vector>

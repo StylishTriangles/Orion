@@ -6,9 +6,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <shader.hpp>
-#include <camera.hpp>
-#include <model.hpp>
+#include <viewer/shader.hpp>
+#include <viewer/camera.hpp>
+#include <viewer/model.hpp>
 
 #include <orion/rtc_parser.hpp>
 #include <orion/raytracer.hpp>

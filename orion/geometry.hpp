@@ -6,7 +6,7 @@
 #include <orion/material.hpp>
 #include <orion/math.hpp>
 
-#define RAYTRACER_TEST_CULL
+// #include "avx/packed_geometry.hpp"
 
 namespace orion {
 

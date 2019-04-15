@@ -20,9 +20,9 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
-// settings
-const unsigned int SCR_WIDTH = 600;
-const unsigned int SCR_HEIGHT = 400;
+// settings (defaults)
+unsigned int SCR_WIDTH = 600;
+unsigned int SCR_HEIGHT = 400;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -43,7 +43,11 @@ int main()
     // return 0;
 
     // load lights and camera settings
-    auto rtc_data = orion::parse_rtc("assets/view_test.rtc");
+    orion::rtc_data rtc_data = orion::parse_rtc("assets/nanosuit.rtc");
+    SCR_WIDTH = rtc_data.xres;
+    SCR_HEIGHT = rtc_data.yres;
+    lastX = SCR_WIDTH / 2.0f;
+    lastY = SCR_HEIGHT / 2.0f;
 
     auto otg = [](orion::vec3f v) -> glm::vec3 {
         return glm::vec3(v.x(), v.y(), v.z());
@@ -51,6 +55,9 @@ int main()
     camera = Camera(otg(rtc_data.view_point), 
                     otg(rtc_data.view_point - rtc_data.look_at),
                     otg(rtc_data.vector_up));
+
+    // load primary light source
+    orion::Light light = rtc_data.lights[0];
 
     // glfw: initialize and configure
     // ------------------------------
@@ -129,8 +136,8 @@ int main()
         // don't forget to enable shader before setting uniforms
         ourShader.use();
 
-        // view/projection transformations
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        // view/projection transformations (the default zoom 45 is multiplied by 57/45 so it's about one radian)
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom*57.f/45.f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         // glm::mat4 projection = glm::perspective(rtc_data.y_view, rtc_data.aspect_ratio, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
         ourShader.setMat4("vp", projection * view);
@@ -142,10 +149,11 @@ int main()
         ourShader.setMat4("modelMat", model);
         ourShader.setMat4("modelNorm", glm::transpose(glm::inverse(model)));
         // set light
-        ourShader.setVec3("light.position", glm::vec3(.5f, .5f, .5f));
-        ourShader.setVec3("light.ambient",  glm::vec3(1.0f, 1.0f, 1.0f));
-        ourShader.setVec3("light.diffuse",  glm::vec3(1.0f, 1.0f, 1.0f));
-        ourShader.setVec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+
+        ourShader.setVec3("light.position", otg(light.position));
+        ourShader.setVec3("light.ambient",  otg(light.color));
+        ourShader.setVec3("light.diffuse",  otg(light.color));
+        ourShader.setVec3("light.specular", otg(light.color));
 
         ourModel.Draw(ourShader);
 

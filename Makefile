@@ -36,9 +36,11 @@ orion: $(ORION_OBJ_FILES)
 viewer: $(ORION_OBJ_FILES) $(VIEWER_OBJ_FILES)
 	$(CC) $(CPPFLAGS) -o $(BUILD_DIR)/rviewer $^ $(LDPATHS) $(LDFLAGS_VIEWER)
 
-raytracer: $(ORION_OBJ_FILES)
-	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE_PATHS) -c -o $(ORION_OBJ_DIR)/launcher_standalone.cpp.o -DRAYTRACER_STANDALONE $(ORION_DIR)/launcher.cpp
-	$(CC) $(CPPFLAGS) -o $(BUILD_DIR)/raytracer $^ $(ORION_OBJ_DIR)/launcher_standalone.cpp.o $(LDPATHS) $(LDFLAGS_RAYTRACER)
+raytracer: $(ORION_OBJ_DIR)/raytracer_launcher.o $(ORION_OBJ_FILES)
+	$(CC) $(CPPFLAGS) -o $(BUILD_DIR)/raytracer $^ $(LDPATHS) $(LDFLAGS_RAYTRACER)
+
+$(ORION_OBJ_DIR)/raytracer_launcher.o:
+	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE_PATHS) -c -o $@ -DRAYTRACER_STANDALONE $(ORION_DIR)/launcher.cpp
 
 # general rule for building .o files
 $(BUILD_DIR)/%.o: %

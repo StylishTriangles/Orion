@@ -70,7 +70,7 @@ public:
         
         Position = position;
         WorldUp = glm::normalize(up);
-        Pitch = glm::degrees(glm::asin(Front.y));
+        Pitch = -glm::degrees(glm::asin(Front.y));
         Yaw = glm::degrees(atan2f32(-Front.z, Front.x));
         updateCameraVectors();
     }

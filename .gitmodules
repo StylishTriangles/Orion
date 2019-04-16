@@ -1,0 +1,3 @@
+[submodule "vendor/tqdm"]
+	path = vendor/tqdm
+	url = https://github.com/tqdm/tqdm.cpp

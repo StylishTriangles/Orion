@@ -32,7 +32,7 @@ public:
     // @param normal: normal to the surface
     // @param hitPoint: point in 3D space at which surface was hit
     // @param light: light structure representing light
-    vec3f color(const vec3f& rayDir, const vec3f& normal, const vec3f & hitPoint, const Light& light) {
+    vec3f color(const vec3f& rayDir, const vec3f& normal, const vec3f & hitPoint, const Light& light) const {
         if (type == PHONG) {
             // Ambient
             vec3f ambient = sol.color_ambient;

@@ -12,16 +12,6 @@ using namespace std;
 
 namespace orion {
 
-// vec3f RayTracer::trace(const vec3f &orig, 
-//                    const vec3f &dir,
-//                    float &t) const 
-// {
-//     float t;
-//     vec3f col = 0.0f;
-//     bool hit = m.intersect(rtc.view_point, dir, t, col);
-//     return col;
-// }
-
 void RayTracer::traceRTC(const char* rtc_file_name, const char* path_to_image)
 {
     filesystem::path rtc_path(rtc_file_name);
@@ -77,22 +67,21 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
         color = 1.0f;
     // nearest intersection
     float tnear = F_INFINITY;
-    float u, v;
-    const Triangle *pTriangle = m.intersect(origin, dir, tnear, u, v);
+    
+    MeshIntersection inter = m.intersect(origin, dir, tnear);
     // triangle not hit
-    if (!pTriangle)
+    if (!inter.intersected())
         return color;
     
     // bias will be used to move our ray away from the surface on reflection
     const float bias = 1e-5;
     // calculate normal to surface
-    vec3f normal = pTriangle->normal();
-    normal.normalize();
+    vec3f normal = inter.normal().normalized();
     // calculate point where ray hits the surface
     vec3f hitPos = origin + dir * tnear;
 
     for (Light const& lght: rtc.lights) {
-        color += pTriangle->pMaterial->color(dir, normal, hitPos, lght);
+        color += inter.material().color(dir, normal, hitPos, lght);
     }
 
     return color;

@@ -40,19 +40,19 @@ struct alignas(16) vec4f
 
     // vec4f access operators
 
-    float& operator [] (int index) {return vec[index];}
+    // float& operator [] (int index) {return vec[index];}
     const float& operator [] (int index) const {return vec[index];}
 
-    float& x() {return vec[0];}
+    // float& x() {return vec[0];}
     const float& x() const {return vec[0];}
 
-    float& y() {return vec[1];}
+    // float& y() {return vec[1];}
     const float& y() const {return vec[1];}
 
-    float& z() {return vec[2];}
+    // float& z() {return vec[2];}
     const float& z() const {return vec[2];}
 
-    float& w() {return vec[3];}
+    // float& w() {return vec[3];}
     const float& w() const {return vec[3];}
 
     // vec4f arithmetic operators

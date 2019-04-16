@@ -48,12 +48,11 @@ class Triangle {
 public:
     // Triangle members
     vec3f v0, e1, e2;
-    Material* pMaterial;
 
     Triangle() = default;
 
-    Triangle(vec3f v0, vec3f v1, vec3f v2, Material* pMat) :
-        v0(v0), e1(v1-v0), e2(v2-v0), pMaterial(pMat) {}
+    Triangle(vec3f v0, vec3f v1, vec3f v2) :
+        v0(v0), e1(v1-v0), e2(v2-v0) {}
 
     /**
      * Tomas Moller and Ben Trumbore method.

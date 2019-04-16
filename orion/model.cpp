@@ -64,14 +64,14 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
         Vertex vertex;
         vec3f vector; // we declare a placeholder vector since assimp uses its own vector class that doesn't directly convert to glm's vec3 class so we transfer the data to this placeholder glm::vec3 first.
         // positions
-        vector.x() = mesh->mVertices[i].x;
-        vector.y() = mesh->mVertices[i].y;
-        vector.z() = mesh->mVertices[i].z;
+        vector = vec3f(mesh->mVertices[i].x,
+                       mesh->mVertices[i].y,
+                       mesh->mVertices[i].z);
         vertex.position = vector;
         // normals
-        vector.x() = mesh->mNormals[i].x;
-        vector.y() = mesh->mNormals[i].y;
-        vector.z() = mesh->mNormals[i].z;
+        vector = vec3f(mesh->mNormals[i].x,
+                       mesh->mNormals[i].y,
+                       mesh->mNormals[i].z);
         vertex.normal = vector;
         // texture coordinates
         if(mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?

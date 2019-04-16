@@ -20,6 +20,8 @@ struct Vertex {
     vec2f texCoords;
 };
 
+const unsigned int INVALID_INTERSECT_ID = ~(unsigned int)(0);
+
 // TracedMesh is a triangle mesh tailored for raytracing.
 // It's based on the Mesh class and has a name distingiushing it from the original.
 // For now it's very simple, but it may change as the raytracer evolves! :)
@@ -44,10 +46,7 @@ public:
         indices     (tm.indices),
         triangles   (tm.triangles),
         pMat        (new Material(*tm.pMat))
-    {
-        // reassign pointers because pMat changed
-        assingMaterialToTriangles();
-    }
+    {}
 
     // move constructor
     TracedMesh(TracedMesh&& tm) :
@@ -55,9 +54,7 @@ public:
         indices     (std::move(tm.indices)),
         triangles   (std::move(tm.triangles)),
         pMat        (std::move(tm.pMat)) 
-    {
-        // no need to modify material pointers since we are just moving stuff around
-    }
+    {}
 
     // constructor
     TracedMesh( const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, const Material &mat) :
@@ -74,22 +71,22 @@ public:
                                   this->vertices[this->indices[i+2]]};
             Triangle t = Triangle(vertexes[0].position,
                                   vertexes[1].position,
-                                  vertexes[2].position,
-                                  this->pMat.get()); // TODO: move triangle creation to mesh
+                                  vertexes[2].position);
             triangles.push_back(t);
         }
     }
     
     ~TracedMesh() = default;
 
-    const Triangle* intersect(const vec3f &orig, 
+    unsigned int intersect(const vec3f &orig, 
                               const vec3f &dir,
                               float &t,
                               float &u,
                               float &v) const
     {
-        const Triangle *ret = nullptr;
-        for (Triangle const& tri: triangles) {
+        unsigned int retID = INVALID_INTERSECT_ID;
+        for (unsigned int i = 0; i < triangles.size(); i++) {
+            Triangle const& tri = triangles[i];
             float tcurr = F_INFINITY;
             float ucurr, vcurr;
             bool section = tri.intersect(orig, dir, tcurr, ucurr, vcurr);
@@ -97,19 +94,19 @@ public:
                 t = tcurr;
                 u = ucurr;
                 v = vcurr;
-                ret = &tri;
+                retID = i;
             }
         }
-        return ret;
+        return retID;
     }
 
-private:
-    void assingMaterialToTriangles() {
-        for (Triangle& tri: this->triangles) {
-            tri.pMaterial = pMat.get();
-        }
+    const Material& material() const {
+        return *pMat;
     }
 
+    const Triangle& getTriangle(unsigned int triangleID) const {
+        return triangles[triangleID];
+    }
 };
 
 };

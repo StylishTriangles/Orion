@@ -43,6 +43,7 @@ raytracer: $(ORION_OBJ_DIR)/raytracer_launcher.o $(ORION_OBJ_FILES)
 	$(CC) $(CPPFLAGS) -o $(BUILD_DIR)/raytracer $^ $(LDPATHS) $(LDFLAGS_RAYTRACER)
 
 $(ORION_OBJ_DIR)/raytracer_launcher.o:
+	@mkdir $(@D) -p
 	$(CC) $(CPPFLAGS) $(CXXFLAGS) $(INCLUDE_PATHS) -c -o $@ -DRAYTRACER_STANDALONE $(ORION_DIR)/launcher.cpp
 
 # general rule for building .o files

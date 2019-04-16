@@ -2,8 +2,11 @@
 #include <fstream>
 #include <random>
 
+#include <tqdm/tqdm.hpp>
+
 #include <orion/raytracer.hpp>
 #include <orion/random.hpp>
+
 
 using namespace std;
 
@@ -50,7 +53,9 @@ void RayTracer::traceRTC(const char* rtc_file_name, const char* path_to_image)
     // Fast random number generator
     xoroshiro128 rng;
 
-    for (int i = 0; i < rtc.yres; i++) {
+    auto progress = tq::trange(int(rtc.yres));
+    progress.set_prefix("Raytracing ");
+    for (int i: progress) {
         for (int j = 0; j < rtc.xres; j++) {
             float x = 2 * (float(j) / float(rtc.xres)) - 1;
             float y = 2 * (float(i) / float(rtc.yres)) - 1;

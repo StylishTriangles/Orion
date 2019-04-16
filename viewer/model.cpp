@@ -196,8 +196,12 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
     return textures;
 }
 
+// @param gamma: currently unused
 unsigned int TextureFromFile(const char *path, const string &directory, bool gamma)
 {
+    // Ignore unused warning for gamma
+    (void)gamma;
+
     string filename = string(path);
     filename = directory + '/' + filename;
 

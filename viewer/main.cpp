@@ -191,6 +191,9 @@ void processInput(GLFWwindow *window)
 // ---------------------------------------------------------------------------------------------
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
+    // Ignore unused parameter warning
+    (void)window;
+
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
@@ -200,6 +203,9 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 // -------------------------------------------------------
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
+    // Ignore unused parameter warning
+    (void)window;
+
     if (firstMouse)
     {
         lastX = xpos;
@@ -218,8 +224,12 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 // glfw: whenever the mouse scroll wheel scrolls, this callback is called
 // ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+void scroll_callback( __attribute__((__unused__)) GLFWwindow* window, double xoffset, double yoffset)
 {
+    // Ignore unused parameter warning
+    (void)window;
+    (void)xoffset;
+    
     camera.ProcessMouseScroll(yoffset);
 }
 

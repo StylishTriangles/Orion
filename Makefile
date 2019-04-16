@@ -10,13 +10,16 @@ VIEWER_OBJ_DIR := $(BUILD_DIR)/$(VIEWER_DIR)
 VIEWER_SRC_FILES := $(shell find $(VIEWER_DIR) -name "*.cpp" -or -name "*.c")
 VIEWER_OBJ_FILES := $(patsubst $(VIEWER_DIR)/%,$(VIEWER_OBJ_DIR)/%.o,$(VIEWER_SRC_FILES))
 
+VENDOR_SRC_FILES := vendor/glad/glad.c
+VENDOR_OBJ_FILES := $(patsubst %,$(BUILD_DIR)/%.o,$(VENDOR_SRC_FILES))
+
 CC := g++
 LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU -lassimp -ldl -lstdc++fs
 LDPATHS := -L/usr/lib64
 CPPFLAGS := -O3 -MMD -msse4.1
 CXXFLAGS := -Wall -Wextra -std=c++17
 CFLAGS := 
-INCLUDE_PATHS := -I. -I./viewer/vendor
+INCLUDE_PATHS := -I. -Ivendor -Ivendor/tqdm/include
 
 LDFLAGS_RAYTRACER := -lassimp -ldl -lstdc++fs
 LDFLAGS_VIEWER := -lGLEW -lglfw3 -lGL -lGLU -lassimp -ldl -lstdc++fs
@@ -33,7 +36,7 @@ all: raytracer viewer
 orion: $(ORION_OBJ_FILES)
 	@true
 
-viewer: $(ORION_OBJ_FILES) $(VIEWER_OBJ_FILES)
+viewer: $(ORION_OBJ_FILES) $(VIEWER_OBJ_FILES) $(VENDOR_OBJ_FILES)
 	$(CC) $(CPPFLAGS) -o $(BUILD_DIR)/rviewer $^ $(LDPATHS) $(LDFLAGS_VIEWER)
 
 raytracer: $(ORION_OBJ_DIR)/raytracer_launcher.o $(ORION_OBJ_FILES)

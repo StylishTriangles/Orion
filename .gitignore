@@ -34,8 +34,5 @@
 build/
 build_debug/
 
-# Copyrighted content
-assets/nanosuit/
-
 # Configuration files
 .vscode/

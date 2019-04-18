@@ -72,7 +72,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Orion Viewer", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -102,12 +102,13 @@ int main()
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("assets/untextured.vs", "assets/untextured.fs");
+    // Shader ourShader("assets/untextured.vs", "assets/untextured.fs");
+    Shader ourShader("assets/simple_shader.vs", "assets/simple_shader.fs");
     std::cout << "Shaders loaded successfully!" << std::endl;
 
     // load models
     // -----------
-    Model ourModel = *(new Model("assets/nanosuit/nanosuit.obj"));
+    Model ourModel = *(new Model("assets/nanosuit2/nanosuit2.obj"));
     std::cout << "Models loaded successfully!" << std::endl;
 
     

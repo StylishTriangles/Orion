@@ -1,0 +1,76 @@
+# File produced by Open Asset Import Library (http://www.assimp.sf.net)
+# (assimp v3.1.187496374)
+
+newmtl Helmet
+Kd 0 0 0
+Ka 0.2 0.2 0.2
+Ks 0.12 0.12 0.12
+Ke 0 0 0
+d 1
+Ns 0.29
+illum 2
+map_Kd helmet_dif.png
+map_Ks hand_showroom_spec.png
+map_Ns helmet_showroom_spec.png
+bump helmet_showroom_ddn.png
+map_bump helmet_showroom_ddn.png
+
+newmtl Glass
+Kd 0 0 0
+Ka 0.2 0.2 0.2
+Ks 0.655 0.655 0.655
+Ke 0.66 0.66 0.66
+d 1
+Ns 0.4
+illum 2
+map_Kd glass_dif.png
+bump glass_ddn.png
+map_bump glass_ddn.png
+
+newmtl Body
+Kd 0 0 0
+Ka 0.2 0.2 0.2
+Ks 0.085 0.085 0.085
+Ke 0 0 0
+d 1
+Ns 0.4
+illum 2
+map_Kd body_dif.png
+
+newmtl Arm
+Kd 0 0 0
+Ka 0.2 0.2 0.2
+Ks 0.085 0.085 0.085
+Ke 0.125 0.125 0.125
+d 1
+Ns 0.4
+illum 2
+map_Kd arm_dif.png
+map_Ns arm_dif.png
+
+newmtl Hand
+Kd 0 0 0
+Ka 0.2 0.2 0.2
+Ks 0.095 0.095 0.095
+Ke 0 0 0
+d 1
+Ns 0.4
+illum 2
+map_Kd hand_dif.png
+map_Ns hand_showroom_ddn.png
+bump hand_showroom_ddn.png
+map_bump hand_showroom_ddn.png
+
+newmtl Leg
+Kd 0 0 0
+Ka 0.2 0.2 0.2
+Ks 0.09 0.09 0.09
+Ke 0 0 0
+d 1
+Ns 0.4
+illum 2
+map_Kd leg_dif.png
+map_Ns leg_showroom_ddn.png
+bump leg_showroom_ddn.png
+map_bump leg_showroom_ddn.png
+

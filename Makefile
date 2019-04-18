@@ -16,7 +16,7 @@ VENDOR_OBJ_FILES := $(patsubst %,$(BUILD_DIR)/%.o,$(VENDOR_SRC_FILES))
 CC := g++
 LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU -lassimp -ldl -lstdc++fs
 LDPATHS := -L/usr/lib64
-CPPFLAGS := -O3 -MMD -msse4.1
+CPPFLAGS := -O3 -MMD -mavx -mfma -g
 CXXFLAGS := -Wall -Wextra -std=c++17
 CFLAGS := 
 INCLUDE_PATHS := -I. -Ivendor

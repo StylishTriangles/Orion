@@ -15,12 +15,17 @@ Simple raytracer.
 ## other
 - GLM*
 - GLAD* (Included in this repository for GL 3.3 Core)
+- tqdm.cpp (See Setup below)
 
 `*` - denotes libraries required by viewer and are not necessary for the raytracer.
 
 `NOTE:` If you are compiling libraries from sources remember to modify `LDPATHS` in Makefile to contain paths with compiled libs.
 
 # Building and running
+## Setup
+1. Download tqdm.cpp submodule
+    
+    `@> git submodule update --init --recursive`
 ## Raytracer
 1. `@> make raytracer`
 2. `@> ./build/raytracer path/to/file.rtc`

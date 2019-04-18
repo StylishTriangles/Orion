@@ -8,6 +8,7 @@
 #include <orion/math.hpp>
 #include <orion/geometry.hpp>
 #include <orion/material.hpp>
+#include <orion/avx/geometry.hpp>
 
 namespace orion {
 
@@ -31,7 +32,7 @@ public:
     /*  Mesh Data  */
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
-    std::vector<Triangle> triangles; 
+    std::vector<PackedTriangles> triangles;
     std::unique_ptr<Material> pMat; // on top of this will be applied textures
 
     // Textures are cut from this Mesh at the moment
@@ -62,7 +63,12 @@ public:
         indices(indices),
         pMat(new Material(mat))
     {
+        // TODO: Optimize process by not constructing singulat triangles ?
         assert(indices.size()%3 == 0);
+        const unsigned packSize = PackedTriangles::count;
+        Triangle buffer[packSize];
+
+        int buffer_index = 0;
         for(unsigned int i = 0; i < this->indices.size(); i += 3)
         {
             // transform vertices and indices to triangles
@@ -72,29 +78,34 @@ public:
             Triangle t = Triangle(vertexes[0].position,
                                   vertexes[1].position,
                                   vertexes[2].position);
-            triangles.push_back(t);
+            buffer[buffer_index] = t;
+            buffer_index++;
+
+            if (buffer_index == packSize) {
+                triangles.push_back(PackedTriangles(buffer, packSize));
+                buffer_index %= packSize;
+            }
+        }
+        if (buffer_index != 0) {
+            triangles.push_back(PackedTriangles(buffer, buffer_index));
         }
     }
     
     ~TracedMesh() = default;
 
+    // @returns triangleID with which ray intersects
     unsigned int intersect(const vec3f &orig, 
-                              const vec3f &dir,
-                              float &t,
-                              float &u,
-                              float &v) const
+                           const vec3f &dir,
+                           float &t,
+                           float &u,
+                           float &v) const
     {
         unsigned int retID = INVALID_INTERSECT_ID;
+        PackedRay pr(orig, dir);
         for (unsigned int i = 0; i < triangles.size(); i++) {
-            Triangle const& tri = triangles[i];
-            float tcurr = F_INFINITY;
-            float ucurr, vcurr;
-            bool section = tri.intersect(orig, dir, tcurr, ucurr, vcurr);
-            if (section && tcurr < t) {
-                t = tcurr;
-                u = ucurr;
-                v = vcurr;
-                retID = i;
+            int insideID = triangles[i].intersect(pr, t, u, v);
+            if (insideID >= 0) {
+                retID = PackedTriangles::count * i + insideID;
             }
         }
         return retID;
@@ -104,8 +115,10 @@ public:
         return *pMat;
     }
 
-    const Triangle& getTriangle(unsigned int triangleID) const {
-        return triangles[triangleID];
+    vec3f normal(unsigned int triangleID, float u, float v) const {
+        return (1.0f-u-v) * vertices[3*triangleID].normal
+                + u * vertices[3*triangleID+1].normal
+                + v * vertices[3*triangleID+2].normal;
     }
 };
 

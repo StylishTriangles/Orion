@@ -207,10 +207,18 @@ static inline vec3f cross(vec3f va, vec3f vb) {
     __m128 const &a = va.vec;
     __m128 const &b = vb.vec;
 
+    /* 3 shuffle  method */
     __m128 a_yzx = _mm_shuffle_ps(a, a, _MM_SHUFFLE(3, 0, 2, 1));
     __m128 b_yzx = _mm_shuffle_ps(b, b, _MM_SHUFFLE(3, 0, 2, 1));
     __m128 c = _mm_sub_ps(_mm_mul_ps(a, b_yzx), _mm_mul_ps(a_yzx, b));
     return _mm_shuffle_ps(c, c, _MM_SHUFFLE(3, 0, 2, 1));
+
+    /* 4 shuffle method */
+    // __m128 a_yzx = _mm_shuffle_ps(a, a, _MM_SHUFFLE(3, 0, 2, 1));
+    // __m128 a_zxy = _mm_shuffle_ps(a, a, _MM_SHUFFLE(3, 1, 0, 2));
+    // __m128 b_zxy = _mm_shuffle_ps(b, b, _MM_SHUFFLE(3, 1, 0, 1));
+    // __m128 b_yzx = _mm_shuffle_ps(b, b, _MM_SHUFFLE(3, 0, 2, 1));
+    // return _mm_sub_ps(_mm_mul_ps(a_yzx, b_zxy), _mm_mul_ps(a_zxy, b_yzx));
 }
 
 // calculate dot product of two 4-element vectors

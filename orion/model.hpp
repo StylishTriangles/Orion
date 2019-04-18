@@ -17,14 +17,14 @@ class MeshIntersection {
 public:
     MeshIntersection() : pMesh(nullptr) {}
 
-    vec3f normal() const { return pMesh->getTriangle(triangleID).normal(); }
+    vec3f normal() const { return pMesh->normal(triangleID, u, v); }
     const Material& material() const { return pMesh->material(); }
     bool intersected() const { return pMesh != nullptr; }
     
     /** Members **/
     const TracedMesh* pMesh;
     unsigned int triangleID;
-    vec2f uv;
+    float u, v;
 }; // class MeshIntersection
 
 // TracedModel is a class representing a 3D model imported with the Assimp library.
@@ -46,12 +46,8 @@ public:
     MeshIntersection intersect(const vec3f& origin, const vec3f &dir, float &t) {
         MeshIntersection ret;
         for (TracedMesh const& tm: meshes) {
-            float ct = F_INFINITY;
-            float cu, cv;
-            unsigned int triangleID = tm.intersect(origin, dir, ct, cu, cv);
-            if (triangleID != INVALID_INTERSECT_ID && ct < t) {
-                t = ct;
-                ret.uv = vec2f(cu, cv);
+            unsigned int triangleID = tm.intersect(origin, dir, t, ret.u, ret.v);
+            if (triangleID != INVALID_INTERSECT_ID) {
                 ret.pMesh = &tm;
                 ret.triangleID = triangleID;
             }

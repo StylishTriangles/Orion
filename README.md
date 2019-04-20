@@ -28,7 +28,7 @@ Simple raytracer.
     `@> git submodule update --init --recursive`
 ## Raytracer
 1. `@> make raytracer`
-2. `@> ./build/raytracer path/to/file.rtc`
+2. `@> ./build/raytracer assets/nanosuit.rtc`
 ## Viewer
 1. `@> make viewer`
 2. `@> ./build/rviewer`

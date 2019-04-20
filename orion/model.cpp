@@ -106,20 +106,16 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
     // specular: texture_specularN
     // normal: texture_normalN
 
-/*** SKIP loading textures (for now)
+
     // 1. diffuse maps
-    vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
-    textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+    vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE);
     // 2. specular maps
-    vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
-    textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+    vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR);
     // 3. normal maps
-    std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
-    textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+    std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT);
     // 4. height maps
-    std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
-    textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
-***/
+    std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT);
+
 
     aiColor3D Ka, Kd, Ks, Ke;
     float shininess, opacity;
@@ -134,6 +130,7 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
         return vec3f(col.r, col.g, col.b);
     };
     SolidSurface base;
+    // Apply base surface colors
     base.color_ambient = aiToV3F(Ka);
     base.color_diffuse = aiToV3F(Kd);
     base.color_specular = aiToV3F(Ks);
@@ -142,9 +139,51 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
     base.opacity = opacity;
 
     Material m(base);
+    // Save textures in the material if
+    if (!diffuseMaps.empty())
+        m.setTexture(Material::TextureType::DIFFUSE, diffuseMaps[0]);
+    if (!specularMaps.empty())
+        m.setTexture(Material::TextureType::SPECULAR, diffuseMaps[0]);
+    // TODO: Tangent space
+    // if (!normalMaps.empty())
+    //     m.setTexture(Material::TextureType::BUMP, normalMaps[0]);
     
     // return a mesh object created from the extracted mesh data
     return TracedMesh(vertices, indices, m);
+}
+
+vector<Texture> TracedModel::loadMaterialTextures(aiMaterial *mat, aiTextureType type)
+{
+    vector<Texture> textures;
+    if (mat->GetTextureCount(type) > 1) {
+        std::cout << "Warning! Multiple textures of same type present, the first one fetched will be used.\n";
+    }
+    for(unsigned int i = 0; i < mat->GetTextureCount(type); i++)
+    {
+        aiString str;
+        mat->GetTexture(type, i, &str);
+
+        std::string texturePath = this->directory + "/" +  std::string(str.C_Str());
+
+        // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
+        bool skip = false;
+        for(unsigned int j = 0; j < textures_loaded.size(); j++)
+        {
+            if(textures_loaded[j].filepath() == texturePath)
+            {
+                textures.push_back(textures_loaded[j]);
+                skip = true; // a texture with the same filepath has already been loaded, continue to next one. (optimization)
+                break;
+            }
+        }
+        if(!skip)
+        {   // if texture hasn't been loaded already, load it
+            Texture texture(texturePath);
+            textures.push_back(texture);
+            textures_loaded.push_back(texture);  // store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
+        }
+    }
+    return textures;
 }
 
 }; // namespace orion

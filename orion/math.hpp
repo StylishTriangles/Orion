@@ -140,6 +140,9 @@ struct alignas(8) vec2f {
     float& y() {return vec[1];}
     const float& y() const {return vec[1];}
 
+    float& operator[] (int ix) {return vec[ix];}
+    const float& operator[] (int ix) const {return vec[ix];}
+
     float vec[2];
 };
 
@@ -185,6 +188,23 @@ static inline vec3f operator - (vec3f lhs, vec3f rhs) {
 static inline vec3f operator - (vec3f un) {
     const __m128 minusZero = _mm_set1_ps(-0.0f);
     return _mm_xor_ps(un.vec, minusZero);
+}
+
+//vec2f operators
+static inline vec2f operator * (vec2f lhs, vec2f rhs) {
+    return vec2f(lhs.x()*rhs.x(), lhs.y()*rhs.y());
+}
+
+static inline vec2f operator / (vec2f lhs, vec2f rhs) {
+    return vec2f(lhs.x()/rhs.x(), lhs.y()/rhs.y());
+}
+
+static inline vec2f operator + (vec2f lhs, vec2f rhs) {
+    return vec2f(lhs.x()+rhs.x(), lhs.y()+rhs.y());
+}
+
+static inline vec2f operator - (vec2f lhs, vec2f rhs) {
+    return vec2f(lhs.x()-rhs.x(), lhs.y()-rhs.y());
 }
 
 // Math functions

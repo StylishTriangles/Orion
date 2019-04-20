@@ -17,14 +17,15 @@ class MeshIntersection {
 public:
     MeshIntersection() : pMesh(nullptr) {}
 
-    vec3f normal() const { return pMesh->normal(triangleID, u, v); }
+    vec3f normal() const { return pMesh->normal(triangleID, uv[0], uv[1]); }
+    vec2f texture_uv() const { return pMesh->texture_uv(triangleID, uv[0], uv[1]); }
     const Material& material() const { return pMesh->material(); }
     bool intersected() const { return pMesh != nullptr; }
     
     /** Members **/
     const TracedMesh* pMesh;
     unsigned int triangleID;
-    float u, v;
+    vec2f uv;
 }; // class MeshIntersection
 
 // TracedModel is a class representing a 3D model imported with the Assimp library.
@@ -46,7 +47,7 @@ public:
     MeshIntersection intersect(const vec3f& origin, const vec3f &dir, float &t) {
         MeshIntersection ret;
         for (TracedMesh const& tm: meshes) {
-            unsigned int triangleID = tm.intersect(origin, dir, t, ret.u, ret.v);
+            unsigned int triangleID = tm.intersect(origin, dir, t, ret.uv[0], ret.uv[1]);
             if (triangleID != INVALID_INTERSECT_ID) {
                 ret.pMesh = &tm;
                 ret.triangleID = triangleID;
@@ -59,7 +60,7 @@ private:
     /*  Model Data */
 
     // Temporarily removed as we are not utilizing textures
-    // std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+    std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     std::vector<TracedMesh> meshes;
     std::string directory;
     bool gammaCorrection;
@@ -72,6 +73,8 @@ private:
     void processNode(aiNode *node, const aiScene *scene);
 
     TracedMesh processMesh(aiMesh *mesh, const aiScene *scene);
+
+    std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type);
 };
 
 };

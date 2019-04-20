@@ -77,11 +77,12 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
     const float bias = 1e-5;
     // calculate normal to surface
     vec3f normal = inter.normal().normalized();
+    vec2f uvs = inter.texture_uv();
     // calculate point where ray hits the surface
     vec3f hitPos = origin + dir * tnear;
 
     for (Light const& lght: rtc.lights) {
-        color += inter.material().color(dir, normal, hitPos, lght);
+        color += inter.material().color(dir, normal, hitPos, lght, uvs);
     }
 
     return color;

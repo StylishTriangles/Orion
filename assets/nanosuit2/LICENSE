@@ -3,3 +3,5 @@ Model available at https://sketchfab.com/3d-models/crysis-nano-suit-2-ca311b94a0
 
 Changes to the original:
 - nanosuit.fbx object file was replaced by nanosuit2.obj and nanosuit2.mtl
+- removed ambient and emissive lighting effects
+- add missing textures

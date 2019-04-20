@@ -115,10 +115,28 @@ public:
         return *pMat;
     }
 
+    /** @brief Interpolate normal using uv values from intersection
+     *  @param triangleID: id of intersected triangle
+     *  @param u: distance along one edge of triangle [0.0-1.0]
+     *  @param v: distance along second edge of triangle [0.0-1.0]
+     *  @returns Interpolated normal
+     **/
     vec3f normal(unsigned int triangleID, float u, float v) const {
         return (1.0f-u-v) * vertices[3*triangleID].normal
                 + u * vertices[3*triangleID+1].normal
                 + v * vertices[3*triangleID+2].normal;
+    }
+
+    /** @brief Interpolate texture uvs
+     *  @param triangleID: id of intersected triangle
+     *  @param u: distance along one edge of triangle [0.0-1.0]
+     *  @param v: distance along second edge of triangle [0.0-1.0]
+     *  @returns Interpolated texture uv at point of intersection
+     **/
+    vec2f texture_uv(unsigned int triangleID, float u, float v) const {
+        return (1.0f-u-v) * vertices[3*triangleID].texCoords
+                + u * vertices[3*triangleID+1].texCoords
+                + v * vertices[3*triangleID+2].texCoords;
     }
 };
 

@@ -3,7 +3,6 @@
 
 #include <cmath>
 
-#include <orion/material.hpp>
 #include <orion/math.hpp>
 
 // #include "avx/packed_geometry.hpp"
@@ -115,6 +114,34 @@ public:
     vec3f normal() const {
         return cross(e1, e2);
     }
+};
+
+// AABB is an axis-aligned bounding box
+class AABB {
+public:
+    AABB() = default;
+    AABB(const vec3f& lowerBound, const vec3f& upperBound) : 
+        lo(lowerBound), hi(upperBound) {}
+
+    float surfaceArea() const {
+        float dX = hi.x() - lo.x();
+        float dY = hi.y() - lo.y();
+        float dZ = hi.z() - lo.z();
+
+        float front = dX*dY;
+        float bottom = dX*dZ;
+        float side = dY*dZ;
+
+        return 2 * (front + bottom + side);
+    }
+
+    vec3f lowerBound() const { return lo; }
+    vec3f upperBound() const { return hi; }
+private:
+    // lo is the lower bound
+    vec3f lo;
+    // hi is the higher bound
+    vec3f hi;
 };
 
 };

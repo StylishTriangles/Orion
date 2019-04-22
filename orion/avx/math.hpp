@@ -24,8 +24,11 @@ struct vec8f {
     ~vec8f() = default;
 
     /** vec8f access operations **/
-    void load(float* data) { vec = _mm256_loadu_ps(data); }
+    void load_unaligned(float* data) { vec = _mm256_loadu_ps(data); }
     void load_aligned(float* data) { vec = _mm256_load_ps(data); }
+
+    void store_unaligned(float* dest) { _mm256_storeu_ps(dest, vec); }
+    void store_aligned(float* dest) { _mm256_store_ps(dest, vec); }
 
     // vector will be filled with xx
     void fill(float xx) { vec = _mm256_set1_ps(xx); }
@@ -35,6 +38,17 @@ struct vec8f {
 
     // members
     __m256 vec;
+};
+
+struct vec8i {
+    vec8i() = default;
+
+    explicit vec8i(__m256i ymm) : vec(ymm) {}
+
+    // access operators
+    int operator [] (int index) const { return _mm256_extract_epi32(vec, index); }
+
+    __m256i vec;
 };
 
 /** vec8f relational operators 
@@ -107,6 +121,72 @@ static inline float min_in_vector(const vec8f &a) {
         }
     }
     return mini;
+}
+
+static inline float max_in_vector(const vec8f &a) {
+    // TODO: Divide and conquer?
+    float maxi = -F_INFINITY;
+    for (int i = 0; i < 8; i++) {
+        if (a[i] > maxi) {
+            maxi = a[i];
+        }
+    }
+    return maxi;
+}
+
+/** Non-canon math functions **/
+
+// Calculate cross product of vectors in SoA format
+static inline void multi_cross(vec8f res[3], const vec8f a[3], const vec8f b[3]) {
+    // Let the compiler put FMA instructions here for us
+    res[0] = a[1] * b[2] - a[2] * b[1];
+    res[1] = a[2] * b[0] - a[0] * b[2];
+    res[2] = a[0] * b[1] - a[1] * b[0];
+}
+
+// Calculate dot product of vectors in SoA format
+static inline vec8f multi_dot(const vec8f a[3], const vec8f b[3]) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+// Substract each of b vectors from a vectors and store result in res
+static inline void multi_sub(vec8f res[3], const vec8f a[3], const vec8f b[3]) {
+    res[0] = a[0] - b[0];
+    res[1] = a[1] - b[1];
+    res[2] = a[2] - b[2];
+}
+
+// For each element: res[i] = a[i] + b[i]
+static inline void multi_add(vec8f res[3], const vec8f a[3], const vec8f b[3]) {
+    res[0] = a[0] + b[0];
+    res[1] = a[1] + b[1];
+    res[2] = a[2] + b[2];
+}
+
+// For each element: res[i] = a[i] / b[i]
+static inline void multi_div(vec8f res[3], const vec8f a[3], const vec8f b[3]) {
+    res[0] = a[0] / b[0];
+    res[1] = a[1] / b[1];
+    res[2] = a[2] / b[2];
+}
+
+// For each element: res[i] = a[i] * b[i]
+static inline void multi_mult(vec8f res[3], const vec8f a[3], const vec8f b[3]) {
+    res[0] = a[0] * b[0];
+    res[1] = a[1] * b[1];
+    res[2] = a[2] * b[2];
+}
+
+// specialization of min function
+template <>
+inline vec8f min<vec8f>(const vec8f& a, const vec8f& b) {
+    return _mm256_min_ps(a.vec, b.vec);
+}
+
+// specialization of max function
+template <>
+inline vec8f max<vec8f>(const vec8f& a, const vec8f& b) {
+    return _mm256_max_ps(a.vec, b.vec);
 }
 
 

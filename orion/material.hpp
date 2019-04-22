@@ -78,7 +78,7 @@ public:
             }
             norm.normalize();
             // Ambient
-            vec3f ambient = 0.0f;// tex[AMBIENT].color(uv);
+            vec3f ambient = tex[AMBIENT].color(uv);
 
             // Diffuse
             vec3f lightDir = normalize(light.position - hitPoint);

@@ -20,7 +20,7 @@ struct alignas(8)  vec2f;
 // Flating point infinity or huge value
 const float F_INFINITY = std::numeric_limits<float>::infinity();
 
-struct alignas(16) vec4f 
+struct alignas(16) vec4f
 {
     // vec4f constructors
 
@@ -274,13 +274,50 @@ static inline vec3f reflect(vec3f I, vec3f N) {
 
 // utility functions
 template <typename T>
-T min(const T& a, const T& b) {
+static inline T min(const T& a, const T& b) {
     return (b<a)?b:a;
 }
 
 template <typename T>
-T max(const T& a, const T& b) {
+static inline T max(const T& a, const T& b) {
     return (a<b)?b:a;
+}
+
+// specializations for vector types
+template <>
+inline vec4f min<vec4f>(const vec4f& a, const vec4f& b) {
+    return _mm_min_ps(a.vec, b.vec);
+}
+
+template <>
+inline vec4f max<vec4f>(const vec4f& a, const vec4f& b) {
+    return _mm_max_ps(a.vec, b.vec);
+}
+
+template <>
+inline vec3f min<vec3f>(const vec3f& a, const vec3f& b) {
+    return _mm_min_ps(a.vec, b.vec);
+}
+
+template <>
+inline vec3f max<vec3f>(const vec3f& a, const vec3f& b) {
+    return _mm_max_ps(a.vec, b.vec);
+}
+
+template <>
+inline vec2f min<vec2f>(const vec2f& a, const vec2f& b) {
+    return vec2f(
+        b[0] < a[0] ? b[0] : a[0],
+        b[1] < a[1] ? b[1] : a[1]
+    );
+}
+
+template <>
+inline vec2f max<vec2f>(const vec2f& a, const vec2f& b) {
+    return vec2f(
+        b[0] > a[0] ? b[0] : a[0],
+        b[1] > a[1] ? b[1] : a[1]
+    );
 }
 
 }; // orion

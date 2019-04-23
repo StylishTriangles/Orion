@@ -123,15 +123,14 @@ public:
         vec8f failed = ((det > minusEps) & (det < plusEps)) // determinant near 0 - ray lies in plane of triangle
                      | (us < zero)
                      | (vs < zero)
-                     | ((us + vs) > one)
-                     | (ts > vec8f(t));
+                     | ((us + vs) > one);
 
         vec8f results = blendv(ts, plusInf, failed);
 
         float mini;
+        // Get the t with minimum index from results
         int min_index = min_in_vector_index(results, mini);
-        // find minimal t (less than the current t)
-        if (mini != F_INFINITY) {
+        if (mini < t) {
             t = mini;
             u = us[min_index];
             v = vs[min_index];
@@ -140,22 +139,6 @@ public:
             min_index = -1;
         }
         return min_index;
-
-        /*** For some reson this is quite faster when compiled on haswell with g++ ***/
-        // float mini = min_in_vector(results);
-        // int index;
-        // if (mini != F_INFINITY) {
-        //     for (index = 0; index < 8; index++) {
-        //         if (results[index] == mini) break;
-        //     }
-        //     t = results[index];
-        //     u = us[index];
-        //     v = vs[index];
-        // }
-        // else {
-        //     index = -1;
-        // }
-        // return index;
     }
 
     float minX() const {

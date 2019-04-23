@@ -106,19 +106,19 @@ public:
     }
 
 private:
-    std::vector<PackedTriangles> packTriangles(const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices) {
+    std::vector<PackedTriangles> packTriangles(const std::vector<Vertex> &vVertices, const std::vector<unsigned int> &vIndices) {
         assert(indices.size()%3 == 0);
         const unsigned packSize = PackedTriangles::count;
         std::vector<PackedTriangles> ret;
         Triangle buffer[packSize];
 
         int buffer_index = 0;
-        for(unsigned int i = 0; i < this->indices.size(); i += 3)
+        for(unsigned int i = 0; i < vIndices.size(); i += 3)
         {
             // transform vertices and indices to triangles
-            Vertex vertexes[3] = {this->vertices[this->indices[i+0]], 
-                                  this->vertices[this->indices[i+1]], 
-                                  this->vertices[this->indices[i+2]]};
+            Vertex vertexes[3] = {vVertices[vIndices[i+0]], 
+                                  vVertices[vIndices[i+1]], 
+                                  vVertices[vIndices[i+2]]};
             Triangle t = Triangle(vertexes[0].position,
                                   vertexes[1].position,
                                   vertexes[2].position);

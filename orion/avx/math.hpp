@@ -112,26 +112,51 @@ static inline vec8f blendv(const vec8f &a, const vec8f &b, const vec8f &mask) {
     return _mm256_blendv_ps(a.vec, b.vec, mask.vec);
 }
 
+// Find the minimum value in vector
 static inline float min_in_vector(const vec8f &a) {
-    // TODO: Divide and conquer?
-    float mini = F_INFINITY;
-    for (int i = 0; i < 8; i++) {
-        if (a[i] < mini) {
-            mini = a[i];
-        }
-    }
-    return mini;
+    // Divide and Conquer!
+    const __m256 &va = a.vec;
+    __m256 va_perm = _mm256_permute_ps(va, _MM_SHUFFLE(2,3,0,1)); // swap in pairs 2<->3 and 0<->1
+    __m256 t1      = _mm256_min_ps(va, va_perm); // note that t1[0] = t1[1] and t1[2] = t1[3] (considering each of 128 bit lanes)
+    __m256 t1_perm = _mm256_permute_ps(t1, _MM_SHUFFLE(0,0,2,2)); // swap upper 64 bits with lower 64 bits of each 128-bit lane (knowing above property)
+    __m256 t2      = _mm256_min_ps(t1, t1_perm); // now t2[0] = t2[1] = t2[2] = t2[3] (considering each of 128 bit lanes)
+    __m256 t2_perm = _mm256_permute2f128_ps(t2, t2, 1); // this basically swaps lower 128 bits and higher 128 bits
+    __m256 t3      = _mm256_min_ps(t2, t2_perm);
+    return _mm256_cvtss_f32(t3);
+}
+
+// Find the index of the minimum value in vector
+// warning: No NaNs should be in a
+// @param a: vector in which mininimum is searched
+// @param minVal (out): minimum value in the vector
+// @returns index of the minimum value in vector a
+static inline int min_in_vector_index(const vec8f &a, float& minVal) {
+    // Divide and Conquer!
+    const __m256 &va = a.vec;
+    __m256 va_perm = _mm256_permute_ps(va, _MM_SHUFFLE(2,3,0,1)); // swap in pairs 2<->3 and 0<->1
+    __m256 t1      = _mm256_min_ps(va, va_perm); // note that t1[0] = t1[1] and t1[2] = t1[3] (considering each of 128 bit lanes)
+    __m256 t1_perm = _mm256_permute_ps(t1, _MM_SHUFFLE(0,0,2,2)); // swap upper 64 bits with lower 64 bits of each 128-bit lane (knowing above property)
+    __m256 t2      = _mm256_min_ps(t1, t1_perm); // now t2[0] = t2[1] = t2[2] = t2[3] (considering each of 128 bit lanes)
+    __m256 t2_perm = _mm256_permute2f128_ps(t2, t2, 1); // this basically swaps lower 128 bits and higher 128 bits
+    __m256 t3      = _mm256_min_ps(t2, t2_perm);
+    // Until this point same as min_in_vector //
+    __m256 mask  = _mm256_cmp_ps(va, t3, _CMP_EQ_OQ);
+    int    indx  = _tzcnt_u32(_mm256_movemask_ps(mask));
+    minVal = _mm256_cvtss_f32(t3);
+    
+    return indx;
 }
 
 static inline float max_in_vector(const vec8f &a) {
-    // TODO: Divide and conquer?
-    float maxi = -F_INFINITY;
-    for (int i = 0; i < 8; i++) {
-        if (a[i] > maxi) {
-            maxi = a[i];
-        }
-    }
-    return maxi;
+    // Divide and Conquer!
+    const __m256 &va = a.vec;
+    __m256 va_perm = _mm256_permute_ps(va, _MM_SHUFFLE(2,3,0,1)); // swap in pairs 2<->3 and 0<->1
+    __m256 t1      = _mm256_max_ps(va, va_perm); // note that t1[0] = t1[1] and t1[2] = t1[3] (considering each of 128 bit lanes)
+    __m256 t1_perm = _mm256_permute_ps(t1, _MM_SHUFFLE(0,0,2,2)); // swap upper 64 bits with lower 64 bits of each 128-bit lane (knowing above property)
+    __m256 t2      = _mm256_max_ps(t1, t1_perm); // now t2[0] = t2[1] = t2[2] = t2[3] (considering each of 128 bit lanes)
+    __m256 t2_perm = _mm256_permute2f128_ps(t2, t2, 1); // this basically swaps lower 128 bits and higher 128 bits
+    __m256 t3      = _mm256_max_ps(t2, t2_perm);
+    return _mm256_cvtss_f32(t3);
 }
 
 /** Non-canon math functions **/

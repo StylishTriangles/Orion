@@ -56,6 +56,14 @@ public:
         return ret;
     }
 
+    int triangleCount() {
+        int sum = 0;
+        for (auto const& mesh: meshes) {
+            sum += mesh.triangleCount();
+        }
+        return sum;
+    }
+
 private:
     /*  Model Data */
 

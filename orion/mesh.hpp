@@ -115,6 +115,10 @@ public:
                 + v * vertices[3*triangleID+2].texCoords;
     }
 
+    int triangleCount() const {
+        return indices.size()/3;
+    }
+
 private:
     SBVH mTree;
 

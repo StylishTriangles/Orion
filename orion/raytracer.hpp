@@ -38,6 +38,8 @@ protected:
      **/
     void calculateCameraVectors(const rtc_data &rtc, vec3f& vecFront, vec3f& vecUp, vec3f& vecRight);
 
+    void printStatistics(TracedModel &m);
+
 private:
     rtc_data rtc;
 };

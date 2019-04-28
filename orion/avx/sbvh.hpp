@@ -10,6 +10,8 @@
 
 namespace orion {
 
+// std::pair<int, int> intersectionCount();
+
 // Provisional structure, not meant for storage!
 struct SBVHTriangle {
     SBVHTriangle(
@@ -79,6 +81,10 @@ public:
     // Construction strategy of the SBVH
     struct Strategy {
         enum Algorithm {
+            // Find median Primitive and split there
+            MEDIAN,
+            // Split in the middle of axis
+            MIDDLE,
             // Surface Area Heuristics
             SAH,
         };
@@ -95,11 +101,12 @@ public:
         Strategy(
             unsigned split_rounding,
             Algorithm algo,
-            unsigned split_candidates
+            unsigned split_candidates,
+            unsigned leaf_triangles = PackedTriangles::count
         ) : split_rounding(split_rounding),
             algo(algo),
             split_candidates(split_candidates),
-            leaf_triangles(PackedTriangles::count) // End recursive process if no more than this many triangles are present
+            leaf_triangles(leaf_triangles) // End recursive process if no more than this many triangles are present
         {}
             
         // Split elements in a way in which into one bucket goes k * split_rounding.
@@ -131,7 +138,7 @@ public:
     SBVH(
         const std::vector<Vertex>& vertices, 
         const std::vector<unsigned>& indices, 
-        Strategy strategy = Strategy(8, SBVH::Strategy::SAH, 12)
+        Strategy strategy = Strategy(8, SBVH::Strategy::MEDIAN, 12, 4)
     );
 
     // @returns triangleID with which ray intersects
@@ -168,8 +175,6 @@ private:
     std::vector<Vertex> mVertices;
     std::vector<unsigned> mIndices;
     std::vector<SBVHTriangle> mTriangles;
-
-
 }; // Class SBVH
 
 }; // namespace orion

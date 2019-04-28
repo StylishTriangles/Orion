@@ -55,6 +55,8 @@ void RayTracer::traceRTC(const char* rtc_file_name, const char* path_to_image)
             image[i][j] = trace(m, rtc.view_point, dir, 0);
         }
     }
+    std::cerr << "\n"; // newline after progress bar
+    printStatistics(m);
 
     // save resulting image as ppm file
     savePPM(path_to_image, image);
@@ -132,6 +134,13 @@ void RayTracer::savePPM(const char* path_to_image, const std::vector<std::vector
         }
     }
     ofs.close();
+}
+
+void RayTracer::printStatistics(TracedModel &m)
+{
+    printf("Triangles:                  %d\n", m.triangleCount());
+    // printf("Ray-AABB intersections:     %d\n", intersectionCount().first);
+    // printf("Ray-Triangle intersections: %d\n", intersectionCount().second);
 }
 
 }; // namespace orion

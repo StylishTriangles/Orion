@@ -4,6 +4,13 @@
 
 namespace orion {
 
+// Dirty hack for testing
+static int triInt = 0;
+static int BBInt = 0;
+std::pair<int, int> intersectionCount() {
+    return {BBInt, triInt};
+}
+
 /** Shallow Bounding Volume Hierarchy is contructed by collapsing a binary BVH
  *  IMPORTANT: vertices and indices vectors must not be changed throughout the construction process,
  *      especially they must not be deleted at any point.
@@ -38,6 +45,7 @@ unsigned int SBVH::innerIntersect(
 
     // Check if ray intersects node's bounding volume
     float tmpa = 0, tmpb = 0;
+    // BBInt++;
     if (!node->bv.intersect(orig, dir, tmpa, tmpb)) {
         return INVALID_RESULT;
     }
@@ -45,6 +53,7 @@ unsigned int SBVH::innerIntersect(
     if (node->isLeaf) {
         unsigned intersectID = INVALID_RESULT;
         for (unsigned i = node->begin; i < node->end; i++) {
+            // triInt++;
             Triangle tri = triangleAt(i);
             bool intersected = tri.intersect(orig, dir, t, u, v);
             if (intersected)
@@ -126,7 +135,39 @@ std::unique_ptr<BuildBVHNode> SBVH::recursiveConstruct(const Strategy& strategy,
     // Pick axis on which we will split
     int axis = boundAll.maximumExtent();
     
+    SBVHTriangle* pmid;
+    unsigned newMid;
+
     switch (strategy.algo) {
+    case Strategy::MEDIAN:
+        std::nth_element(
+            &triangles[begin],
+            &triangles[(begin+end)/2],
+            &triangles[end],
+            [&](const SBVHTriangle &lhs, const SBVHTriangle &rhs) {
+                return boundAll.offset(lhs.centroid())[axis] < boundAll.offset(rhs.centroid())[axis];
+        });
+        newMid = (begin+end)/2;
+        ret->isLeaf = false;
+        ret->children[0] = recursiveConstruct(strategy, triangles, begin, newMid);
+        ret->children[1] = recursiveConstruct(strategy, triangles, newMid, end);
+        break;
+    case Strategy::MIDDLE:
+        pmid = std::partition(&triangles[begin], &triangles[end],
+            [&](const SBVHTriangle &tri) {
+                return boundAll.offset(tri.centroid())[axis] <= 0.5f;
+            }
+        );
+        if (pmid == &triangles[begin] || pmid == &triangles[end]) {
+            ret->isLeaf = true;
+            return ret;
+        } else {
+            newMid = pmid - &triangles[0];
+            ret->isLeaf = false;
+            ret->children[0] = recursiveConstruct(strategy, triangles, begin, newMid);
+            ret->children[1] = recursiveConstruct(strategy, triangles, newMid, end);
+        }
+        break;
     case Strategy::SAH: // fallthrough, SAH is the default algorithm
     default:
         // Create empty buckets
@@ -177,14 +218,14 @@ std::unique_ptr<BuildBVHNode> SBVH::recursiveConstruct(const Strategy& strategy,
             ret->isLeaf = true;
         } else {
             // split and call
-            SBVHTriangle* pmid = std::partition(&triangles[begin], &triangles[end],
+            pmid = std::partition(&triangles[begin], &triangles[end],
                 [&](const SBVHTriangle &tri) {
                     unsigned b = nBuckets * boundAll.offset(tri.centroid())[axis];
                     if (b == nBuckets) b--;
                     return b <= minCostSplitBucket;
                 }
             );
-            unsigned newMid = pmid - &triangles[0];
+            newMid = pmid - &triangles[0];
             ret->isLeaf = false;
             ret->children[0] = recursiveConstruct(strategy, triangles, begin, newMid);
             ret->children[1] = recursiveConstruct(strategy, triangles, newMid, end);

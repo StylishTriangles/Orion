@@ -277,10 +277,15 @@ public:
         multi_sub(tmp, hi, ray.origin);
         multi_mult(t2, tmp, ray.inv_direction);
 
-        // intersection happens when ray intersects AABB on ech axis
-        // so each of t1 must be lower than each of t2
-        tmin = max(t1[0], max(t1[1], t1[2]));
-        tmax = min(t2[0], min(t2[1], t2[2]));
+        // lower values from t1 and t2
+        vec8f tlower[3];
+        multi_min(tlower, t1, t2);
+        // higher values from t1 and t2
+        vec8f thigher[3];
+        multi_max(thigher, t1, t2);
+
+        tmin = max(tlower[0], max(tlower[1], tlower[2]));
+        tmax = min(thigher[0], min(thigher[1], thigher[2]));
 
         vec8f mask = (tmax > tmin) & (tmax > zero);
         // cast mask to create intersection mask

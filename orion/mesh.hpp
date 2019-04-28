@@ -10,6 +10,7 @@
 #include <orion/math.hpp>
 #include <orion/vertex.hpp>
 #include <orion/avx/geometry.hpp>
+#include <orion/avx/sbvh.hpp>
 
 namespace orion {
 
@@ -38,23 +39,25 @@ public:
         vertices    (tm.vertices),
         indices     (tm.indices),
         triangles   (tm.triangles),
-        pMat        (new Material(*tm.pMat))
+        pMat        (new Material(*tm.pMat)),
+        mTree       (tm.mTree)
     {}
 
-    // move constructor
-    TracedMesh(TracedMesh&& tm) :
-        vertices    (std::move(tm.vertices)),
-        indices     (std::move(tm.indices)),
-        triangles   (std::move(tm.triangles)),
-        pMat        (std::move(tm.pMat)) 
-    {}
+    // // move constructor
+    // TracedMesh(TracedMesh&& tm) :
+    //     vertices    (std::move(tm.vertices)),
+    //     indices     (std::move(tm.indices)),
+    //     triangles   (std::move(tm.triangles)),
+    //     pMat        (std::move(tm.pMat)) 
+    // {}
 
     // constructor
     TracedMesh( const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, const Material &mat) :
         vertices(vertices),
         indices(indices),
         triangles(packTriangles(vertices, indices)),
-        pMat(new Material(mat))
+        pMat(new Material(mat)),
+        mTree(vertices, indices)
     {}
     
     ~TracedMesh() = default;
@@ -66,15 +69,22 @@ public:
                            float &u,
                            float &v) const
     {
-        unsigned int retID = INVALID_INTERSECT_ID;
-        PackedRay pr(orig, dir);
-        for (unsigned int i = 0; i < triangles.size(); i++) {
-            int insideID = triangles[i].intersect(pr, t, u, v);
-            if (insideID >= 0) {
-                retID = PackedTriangles::count * i + insideID;
-            }
-        }
-        return retID;
+        return mTree.intersect(
+            orig,
+            dir,
+            t,
+            u,
+            v
+        );
+        // unsigned int retID = INVALID_INTERSECT_ID;
+        // PackedRay pr(orig, dir);
+        // for (unsigned int i = 0; i < triangles.size(); i++) {
+        //     int insideID = triangles[i].intersect(pr, t, u, v);
+        //     if (insideID >= 0) {
+        //         retID = PackedTriangles::count * i + insideID;
+        //     }
+        // }
+        // return retID;
     }
 
     const Material& material() const {
@@ -106,6 +116,8 @@ public:
     }
 
 private:
+    SBVH mTree;
+
     std::vector<PackedTriangles> packTriangles(const std::vector<Vertex> &vVertices, const std::vector<unsigned int> &vIndices) {
         assert(indices.size()%3 == 0);
         const unsigned packSize = PackedTriangles::count;

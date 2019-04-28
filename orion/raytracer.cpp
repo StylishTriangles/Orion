@@ -74,7 +74,7 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
         return color;
     
     // bias will be used to move our ray away from the surface on reflection
-    const float bias = 1e-5;
+    const float bias = 1e-4;
     // calculate normal to surface
     vec3f normal = inter.normal().normalized();
     vec2f uvs = inter.texture_uv();
@@ -82,7 +82,10 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
     vec3f hitPos = origin + dir * tnear;
 
     for (Light const& lght: rtc.lights) {
-        color += inter.material().color(dir, normal, hitPos, lght, uvs);
+        float tnear2 = F_INFINITY;
+        MeshIntersection inter2 = m.intersect(hitPos+(bias*normal), lght.position-hitPos, tnear2);
+        if (!inter2.intersected())
+            color += inter.material().color(dir, normal, hitPos, lght, uvs);
     }
 
     return color;

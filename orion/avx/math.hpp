@@ -46,7 +46,19 @@ struct vec8i {
     explicit vec8i(__m256i ymm) : vec(ymm) {}
 
     // access operators
-    int operator [] (int index) const { return _mm256_extract_epi32(vec, index); }
+    int operator [] (int index) const {
+        switch(index) {
+        case 0: return _mm256_extract_epi32(vec, 0); 
+        case 1: return _mm256_extract_epi32(vec, 1); 
+        case 2: return _mm256_extract_epi32(vec, 2); 
+        case 3: return _mm256_extract_epi32(vec, 3); 
+        case 4: return _mm256_extract_epi32(vec, 4); 
+        case 5: return _mm256_extract_epi32(vec, 5); 
+        case 6: return _mm256_extract_epi32(vec, 6); 
+        case 7: return _mm256_extract_epi32(vec, 7);
+        default: return -1; 
+        }
+    }
 
     __m256i vec;
 };
@@ -91,6 +103,18 @@ static inline vec8f operator | (const vec8f &a, const vec8f &b) {
 
 static inline vec8f operator & (const vec8f &a, const vec8f &b) {
     return _mm256_and_ps(a.vec, b.vec);
+}
+
+// specialization of min function
+template <>
+inline vec8f min<vec8f>(const vec8f& a, const vec8f& b) {
+    return _mm256_min_ps(a.vec, b.vec);
+}
+
+// specialization of max function
+template <>
+inline vec8f max<vec8f>(const vec8f& a, const vec8f& b) {
+    return _mm256_max_ps(a.vec, b.vec);
 }
 
 // Multiply packed floats in a and b add the intermediate result to c and return the sum
@@ -202,18 +226,19 @@ static inline void multi_mult(vec8f res[3], const vec8f a[3], const vec8f b[3]) 
     res[2] = a[2] * b[2];
 }
 
-// specialization of min function
-template <>
-inline vec8f min<vec8f>(const vec8f& a, const vec8f& b) {
-    return _mm256_min_ps(a.vec, b.vec);
+// For each element: res[i] = min(a[i], b[i])
+static inline void multi_min(vec8f res[3], const vec8f a[3], const vec8f b[3]) {
+    res[0] = min(a[0], b[0]);
+    res[1] = min(a[1], b[1]);
+    res[2] = min(a[2], b[2]);
 }
 
-// specialization of max function
-template <>
-inline vec8f max<vec8f>(const vec8f& a, const vec8f& b) {
-    return _mm256_max_ps(a.vec, b.vec);
+// For each element: res[i] = max(a[i], b[i])
+static inline void multi_max(vec8f res[3], const vec8f a[3], const vec8f b[3]) {
+    res[0] = max(a[0], b[0]);
+    res[1] = max(a[1], b[1]);
+    res[2] = max(a[2], b[2]);
 }
-
 
 }; // namespace orion
 

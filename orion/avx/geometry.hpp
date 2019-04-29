@@ -19,18 +19,21 @@ struct PackedRay {
         direction[0].fill(std_direction.x());
         direction[1].fill(std_direction.y());
         direction[2].fill(std_direction.z());
+
+        vec3f inv_dir = vec3f(1.0f)/std_direction;
+        inv_direction[0].fill(inv_dir.x());
+        inv_direction[1].fill(inv_dir.y());
+        inv_direction[2].fill(inv_dir.z());
     }
 
     // information about a single ray in SOA format
     vec8f origin[3];
     vec8f direction[3];
+    vec8f inv_direction[3];
 };
 
 class PackedTriangles {
 public:
-    // vertex and 2 edges in SOA format
-    vec8f v0[3], e1[3], e2[3];
-
     PackedTriangles() = default;
 
     PackedTriangles(const Triangle* tArray, int count) { fromTriangles(tArray, count); }
@@ -124,44 +127,208 @@ public:
 
         vec8f results = blendv(ts, plusInf, failed);
 
-        // find minimal t (less than the current t)
-        int index = -1;
-        for (int i = 0; i < 8; i++) {
-            if (results[i] < t) {
-                index = i;
-                t = results[i];
-            }
+        float mini;
+        // Get the t with minimum index from results
+        int min_index = min_in_vector_index(results, mini);
+        if (mini < t) {
+            t = mini;
+            u = us[min_index];
+            v = vs[min_index];
         }
-        if (index != -1) {
-            u = us[index];
-            v = vs[index];
+        else {
+            min_index = -1;
         }
-        
-        return index;
+        return min_index;
+    }
+
+    float minX() const {
+        return minAxis(0);
+    }
+    float minY() const {
+        return minAxis(1);
+    }
+    float minZ() const {
+        return minAxis(2);
+    }
+
+    float maxX() const {
+        return maxAxis(0);
+    }
+    float maxY() const {
+        return maxAxis(1);
+    }
+    float maxZ() const {
+        return maxAxis(2);
     }
 
     // Count is the number of triangles packed present in PackedTriangles structure
     static const unsigned count = 8;
 
 private:
-    // Calculate cross product of vectors in SoA format
-    void multi_cross(vec8f res[3], const vec8f a[3], const vec8f b[3]) const {
-        // Let the compiler put FMA instructions here for us
-        res[0] = a[1] * b[2] - a[2] * b[1];
-        res[1] = a[2] * b[0] - a[0] * b[2];
-        res[2] = a[0] * b[1] - a[1] * b[0];
+    // vertex and 2 edges in SOA format
+    vec8f v0[3], e1[3], e2[3];
+
+    float minAxis(int axisID) const {
+        vec8f v0_ax = v0[axisID];
+        vec8f v1_ax = v0[axisID] + e1[axisID];
+        vec8f v2_ax = v0[axisID] + e2[axisID];
+
+        float v0_min = min_in_vector(v0_ax);
+        float v1_min = min_in_vector(v1_ax);
+        float v2_min = min_in_vector(v2_ax);
+
+        return min(min(v0_min, v1_min), v2_min);
     }
 
-    // Calculate dot product of vectors in SoA format
-    vec8f multi_dot(const vec8f a[3], const vec8f b[3]) const {
-        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    float maxAxis(int axisID) const {
+        vec8f v0_ax = v0[axisID];
+        vec8f v1_ax = v0[axisID] + e1[axisID];
+        vec8f v2_ax = v0[axisID] + e2[axisID];
+
+        float v0_max = max_in_vector(v0_ax);
+        float v1_max = max_in_vector(v1_ax);
+        float v2_max = max_in_vector(v2_ax);
+
+        return max(max(v0_max, v1_max), v2_max);
+    }
+};
+
+// AVX SOA representation of 8 Axis Aligned Bounding Boxes
+class PackedAABB {
+public:
+    PackedAABB() = default;
+
+    void fromPackedTriangles(const PackedTriangles* pArray, int count) {
+        assert (count >= 1 && count <= 8);
+        alignas(32) float lo_raw[3*8];
+        alignas(32) float hi_raw[3*8];
+
+        for (int i = 0; i < 8; i++) {
+            const PackedTriangles* pCurr;
+            // Just like previously if there are less than 8 triangles just fill the remainder with legit packed triangles
+            if (i >= count) {
+                pCurr = pArray + (count-1);
+            } else {
+                pCurr = pArray + i;
+            }
+
+            lo_raw[ 0+i] = pCurr->minX();
+            lo_raw[ 8+i] = pCurr->minY();
+            lo_raw[16+i] = pCurr->minZ();
+
+            hi_raw[ 0+i] = pCurr->maxX();
+            hi_raw[ 8+i] = pCurr->maxY();
+            hi_raw[16+i] = pCurr->maxZ();
+
+        }
+        for (int i = 0; i < 3; i++) {
+            lo[i].load_aligned(lo_raw+(i*8));
+            hi[i].load_aligned(hi_raw+(i*8));
+        }
     }
 
-    // Substract each of b vectors from a vectors and store result in res
-    void multi_sub(vec8f res[3], const vec8f a[3], const vec8f b[3]) const {
-        res[0] = a[0] - b[0];
-        res[1] = a[1] - b[1];
-        res[2] = a[2] - b[2];
+    // Create bounding box for bounding boxes
+    void fromPackedAABB(const PackedAABB* pArray, int count) {
+        assert (count >= 1 && count <= 8);
+        alignas(32) float lo_raw[3*8];
+        alignas(32) float hi_raw[3*8];
+
+        for (int i = 0; i < 8; i++) {
+            const PackedAABB* pCurr;
+            // Just like previously if there are less than 8 AABB just fill the remainder with legit packed AABB
+            if (i >= count) {
+                pCurr = pArray + (count-1);
+            } else {
+                pCurr = pArray + i;
+            }
+
+            lo_raw[ 0+i] = pCurr->minX();
+            lo_raw[ 8+i] = pCurr->minY();
+            lo_raw[16+i] = pCurr->minZ();
+
+            hi_raw[ 0+i] = pCurr->maxX();
+            hi_raw[ 8+i] = pCurr->maxY();
+            hi_raw[16+i] = pCurr->maxZ();
+
+        }
+        for (int i = 0; i < 3; i++) {
+            lo[i].load_aligned(lo_raw+(i*8));
+            hi[i].load_aligned(hi_raw+(i*8));
+        }
+    }
+
+    /** @brief Intersect ray with AABB
+     *  @param ray: Single packed ray
+     *  @param intersectionMask (out): mask representing which bounding boxes were intersected 
+     *  @param tmin: closer point of intersection
+     *  @param tmax: further point of intersection
+     *  note: TRUE = 0xFFFFFFFF, FALSE = 0x00000000
+     **/
+    void intersect(const PackedRay& ray, vec8i& intersectionMask, vec8f& tmin, vec8f& tmax) {
+        const vec8f zero = vec8f(0.0f);
+
+        vec8f t1[3];
+        vec8f t2[3];
+        vec8f tmp[3];
+        // t1 = (lo - rayO) * invDir
+        multi_sub(tmp, lo, ray.origin);
+        multi_mult(t1, tmp, ray.inv_direction);
+        // t2 = (hi - rayO) * invDir
+        multi_sub(tmp, hi, ray.origin);
+        multi_mult(t2, tmp, ray.inv_direction);
+
+        // lower values from t1 and t2
+        vec8f tlower[3];
+        multi_min(tlower, t1, t2);
+        // higher values from t1 and t2
+        vec8f thigher[3];
+        multi_max(thigher, t1, t2);
+
+        tmin = max(tlower[0], max(tlower[1], tlower[2]));
+        tmax = min(thigher[0], min(thigher[1], thigher[2]));
+
+        vec8f mask = (tmax > tmin) & (tmax > zero);
+        // cast mask to create intersection mask
+        intersectionMask = vec8i(_mm256_castps_si256(mask.vec)); 
+    }
+
+    float minX() const {
+        return minAxis(0);
+    }
+    float minY() const {
+        return minAxis(1);
+    }
+    float minZ() const {
+        return minAxis(2);
+    }
+
+    float maxX() const {
+        return maxAxis(0);
+    }
+    float maxY() const {
+        return maxAxis(1);
+    }
+    float maxZ() const {
+        return maxAxis(2);
+    }
+
+    // Count is the number of Bounding boxes packed present in PackedAABB structure
+    static const unsigned count = 8;
+
+#ifndef RAW_ACCESS_TESTING
+private:
+#endif
+    // lower corner satisfying lo[i] <= hi[i]
+    vec8f lo[3];
+    // upper corner satisfying hi[i] >= lo[i]
+    vec8f hi[3];
+
+    float minAxis(int axisID) const {
+        return min_in_vector(lo[axisID]);
+    }
+
+    float maxAxis(int axisID) const {
+        return max_in_vector(hi[axisID]);
     }
 };
 

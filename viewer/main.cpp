@@ -36,14 +36,16 @@ float lastFrame = 0.0f;
 
 GLFWwindow* window = NULL;
 
-int main()
+int main(int argc, char** argv)
 {
-    // orion::RayTracer RT;
-    // RT.traceRTC("assets/view_test.rtc");
-    // return 0;
+    if (argc != 2) {
+        printf("Usage:\nrviewer path/to/rtc/file.rtc\n");
+        return 1;
+    }
 
     // load lights and camera settings
-    orion::rtc_data rtc_data = orion::parse_rtc("assets/nanosuit.rtc");
+    std::string rtc_path(argv[1]);
+    orion::rtc_data rtc_data = orion::parse_rtc(rtc_path.c_str());
     SCR_WIDTH = rtc_data.xres;
     SCR_HEIGHT = rtc_data.yres;
     lastX = SCR_WIDTH / 2.0f;
@@ -102,18 +104,20 @@ int main()
 
     // build and compile shaders
     // -------------------------
-    // Shader ourShader("assets/untextured.vs", "assets/untextured.fs");
-    Shader ourShader("assets/simple_shader.vs", "assets/simple_shader.fs");
+    // Shader ourShader("shaders/untextured.vs", "shaders/untextured.fs");
+    Shader ourShader("shaders/simple_shader.vs", "shaders/simple_shader.fs");
     std::cout << "Shaders loaded successfully!" << std::endl;
 
     // load models
     // -----------
-    Model ourModel = *(new Model("assets/nanosuit2/nanosuit2.obj"));
+    std::string rtc_dir = rtc_path.substr(0, rtc_path.find_last_of('/'));
+    Model ourModel = *(new Model(rtc_dir + "/" + rtc_data.obj_file));
     std::cout << "Models loaded successfully!" << std::endl;
 
     
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glm::mat4 model = glm::mat4(1.0f);
 
     // render loop
     // -----------
@@ -144,9 +148,9 @@ int main()
         ourShader.setMat4("vp", projection * view);
 
         // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
         // model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // translate it down so it's at the center of the scene
         // model = glm::scale(model, glm::vec3(0.3f, 0.3f, 0.3f));	// it's a bit too big for our scene, so scale it down
+        model = glm::rotate(model, 0.1f*deltaTime, glm::vec3(0,1,0));
         ourShader.setMat4("modelMat", model);
         ourShader.setMat4("modelNorm", glm::transpose(glm::inverse(model)));
         // set light

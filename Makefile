@@ -10,16 +10,17 @@ VIEWER_OBJ_DIR := $(BUILD_DIR)/$(VIEWER_DIR)
 VIEWER_SRC_FILES := $(shell find $(VIEWER_DIR) -name "*.cpp" -or -name "*.c")
 VIEWER_OBJ_FILES := $(patsubst $(VIEWER_DIR)/%,$(VIEWER_OBJ_DIR)/%.o,$(VIEWER_SRC_FILES))
 
-VIEWER_DEPS_SRC := vendor/glad/glad.c vendor/stb_image.cpp
+ORION_DEPS_SRC := vendor/stb_image.cpp vendor/stb_image_write.cpp
+ORION_DEPS_OBJ := $(patsubst %,$(BUILD_DIR)/%.o,$(ORION_DEPS_SRC))
+
+VIEWER_DEPS_SRC := vendor/glad/glad.c $(ORION_DEPS_SRC)
 VIEWER_DEPS_OBJ := $(patsubst %,$(BUILD_DIR)/%.o,$(VIEWER_DEPS_SRC))
 
-ORION_DEPS_SRC := vendor/stb_image.cpp
-ORION_DEPS_OBJ := $(patsubst %,$(BUILD_DIR)/%.o,$(ORION_DEPS_SRC))
 
 CC := g++
 LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU -lassimp -ldl -lstdc++fs
 LDPATHS := -L/usr/lib64
-CPPFLAGS := -O3 -MMD -mavx -mfma -g
+CPPFLAGS := -O3 -MMD -g -mavx -mfma -mbmi
 CXXFLAGS := -Wall -Wextra -std=c++17
 CFLAGS := 
 INCLUDE_PATHS := -I. -Ivendor

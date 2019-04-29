@@ -20,7 +20,7 @@ struct alignas(8)  vec2f;
 // Flating point infinity or huge value
 const float F_INFINITY = std::numeric_limits<float>::infinity();
 
-struct alignas(16) vec4f 
+struct alignas(16) vec4f
 {
     // vec4f constructors
 
@@ -121,6 +121,30 @@ struct alignas(16) vec3f : public vec4f {
         dp = _mm_rsqrt_ps(dp);
         return _mm_mul_ps(vec, dp);
     }
+
+    // Calculate average value of elements
+    float average() const {
+        return (vec[0] + vec[1] + vec[2])*0.33333333333333f;
+    }
+};
+
+// vec3f_compact takes up the minimum size required to store 3 floats
+// and therefore will be stored continuously in an array
+struct vec3f_compact {
+    vec3f_compact() = default;
+
+    vec3f_compact(const vec3f &ref) {
+        float tmp[4];
+        _mm_storeu_ps(tmp, ref.vec);
+        vec[0] = tmp[0];
+        vec[1] = tmp[1];
+        vec[2] = tmp[2];
+    }
+
+    float& operator [] (int index) {return vec[index];}
+    const float& operator [] (int index) const {return vec[index];}
+
+    float vec[3];
 };
 
 // Basic structure to hold 2 floats
@@ -259,7 +283,7 @@ static inline float dot(vec3f a, vec3f b) {
     return _mm_cvtss_f32(_mm_dp_ps(a.vec, b.vec, 0x71));
 }
 
-// calculate vector orthogonal to a 
+// calculate b' orthogonal to a 
 static inline vec3f orthogonalize(vec3f a, vec3f b) {
     __m128 n = _mm_dp_ps(a.vec, b.vec, 0x7f);
     __m128 d = _mm_dp_ps(a.vec, a.vec, 0x7f);
@@ -274,13 +298,50 @@ static inline vec3f reflect(vec3f I, vec3f N) {
 
 // utility functions
 template <typename T>
-T min(const T& a, const T& b) {
+static inline T min(const T& a, const T& b) {
     return (b<a)?b:a;
 }
 
 template <typename T>
-T max(const T& a, const T& b) {
+static inline T max(const T& a, const T& b) {
     return (a<b)?b:a;
+}
+
+// specializations for vector types
+template <>
+inline vec4f min<vec4f>(const vec4f& a, const vec4f& b) {
+    return _mm_min_ps(a.vec, b.vec);
+}
+
+template <>
+inline vec4f max<vec4f>(const vec4f& a, const vec4f& b) {
+    return _mm_max_ps(a.vec, b.vec);
+}
+
+template <>
+inline vec3f min<vec3f>(const vec3f& a, const vec3f& b) {
+    return _mm_min_ps(a.vec, b.vec);
+}
+
+template <>
+inline vec3f max<vec3f>(const vec3f& a, const vec3f& b) {
+    return _mm_max_ps(a.vec, b.vec);
+}
+
+template <>
+inline vec2f min<vec2f>(const vec2f& a, const vec2f& b) {
+    return vec2f(
+        b[0] < a[0] ? b[0] : a[0],
+        b[1] < a[1] ? b[1] : a[1]
+    );
+}
+
+template <>
+inline vec2f max<vec2f>(const vec2f& a, const vec2f& b) {
+    return vec2f(
+        b[0] > a[0] ? b[0] : a[0],
+        b[1] > a[1] ? b[1] : a[1]
+    );
 }
 
 }; // orion

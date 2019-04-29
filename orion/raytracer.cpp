@@ -3,7 +3,9 @@
 #include <random>
 
 #include <tqdm/tqdm.hpp>
+#include <stb_image_write.h>
 
+#include <orion/array2d.hpp>
 #include <orion/raytracer.hpp>
 #include <orion/random.hpp>
 
@@ -25,13 +27,9 @@ void RayTracer::traceRTC(const char* rtc_file_name, const char* path_to_image)
     TracedModel m = TracedModel(obj_path.string().c_str());
 
     // define our image as vector of vectors of colors
-    vector<vector<vec3f> > image(rtc.yres);
-    for (int i = 0; i < rtc.yres; i++) {
-        image[i].resize(rtc.xres);
-        for (int j = 0; j < rtc.xres; j++) {
-            image[i][j] = 0.0f;
-        }
-    }
+    vector<vec3f> vZero(rtc.xres, vec3f(0.0f));
+    vector<vector<vec3f> > image(rtc.yres, vZero);
+
     vec3f vecFront, vecUp, vecRight;
     calculateCameraVectors(rtc, vecFront, vecUp, vecRight);
 
@@ -52,19 +50,19 @@ void RayTracer::traceRTC(const char* rtc_file_name, const char* path_to_image)
             y = -y; // flip y axis so that (-1, -1) is the top left corner
             vec3f dir = vecFront + x * vecRight + y * vecUp;
             // run raytracer on our model
-            image[i][j] = trace(m, rtc.view_point, dir, 0);
+            image[i][j] = trace(m, rtc.view_point, dir, rtc.recursion_level);
         }
     }
+    std::cerr << "\n"; // newline after progress bar
+    printStatistics(m);
 
     // save resulting image as ppm file
-    savePPM(path_to_image, image);
+    savePNG(path_to_image, image);
 }
 
-vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth, bool shadow)
+vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth)
 {
     vec3f color = 0.0f;
-    if (shadow)
-        color = 1.0f;
     // nearest intersection
     float tnear = F_INFINITY;
     
@@ -74,16 +72,24 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
         return color;
     
     // bias will be used to move our ray away from the surface on reflection
-    const float bias = 1e-5;
+    // This value was chosen by trial and error - in a way that primary rays + shadow rays don't generate black pixels
+    const float bias = 3e-5f;
     // calculate normal to surface
     vec3f normal = inter.normal().normalized();
-    vec2f uvs = inter.texture_uv();
+    vec2f uv = inter.texture_uv();
     // calculate point where ray hits the surface
     vec3f hitPos = origin + dir * tnear;
 
     for (Light const& lght: rtc.lights) {
-        color += inter.material().color(dir, normal, hitPos, lght, uvs);
+        float tnear2 = F_INFINITY;
+        MeshIntersection inter2 = m.intersect(hitPos+(bias*normal), lght.position-hitPos, tnear2);
+        if (!inter2.intersected())
+            color += inter.material().color(dir, normal, hitPos, lght, uv);
     }
+
+    // TODO: Tail recursion?
+    if (depth > 0)
+        color += inter.material().reflectivity(uv) * trace(m, hitPos + normal * bias, reflect(dir, normal), depth-1);
 
     return color;
 }
@@ -129,6 +135,37 @@ void RayTracer::savePPM(const char* path_to_image, const std::vector<std::vector
         }
     }
     ofs.close();
+}
+
+void RayTracer::savePNG(const char* path_to_image, const std::vector<std::vector<vec3f> > &image)
+{
+    struct RGB {
+        unsigned char r,g,b,a;
+    };
+    unsigned height = rtc.yres;
+    unsigned width = rtc.xres;
+    Array2D<RGB> exporter(height, width);
+
+    for (unsigned h = 0; h < height; h++) {
+        for (unsigned w = 0; w < width; w++) {
+            exporter[h][w].r = min(1.0f, image[h][w].x())*255;
+            exporter[h][w].g = min(1.0f, image[h][w].y())*255;
+            exporter[h][w].b = min(1.0f, image[h][w].z())*255;
+            exporter[h][w].a = 255;
+        }
+    }
+
+    int ret = stbi_write_png(path_to_image, width, height, 4, exporter.begin(), width*sizeof(RGB));
+    if (ret == 0) {
+        std::cout << "Error ocurred when saving file to " << path_to_image << std::endl;
+    }
+}
+
+void RayTracer::printStatistics(TracedModel &m)
+{
+    printf("Triangles:                  %d\n", m.triangleCount());
+    // printf("Ray-AABB intersections:     %d\n", intersectionCount().first);
+    // printf("Ray-Triangle intersections: %d\n", intersectionCount().second);
 }
 
 }; // namespace orion

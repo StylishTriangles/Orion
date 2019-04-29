@@ -78,7 +78,7 @@ public:
             }
             norm.normalize();
             // Ambient
-            vec3f ambient = 0.0f;// tex[AMBIENT].color(uv);
+            vec3f ambient = tex[AMBIENT].color(uv);
 
             // Diffuse
             vec3f lightDir = normalize(light.position - hitPoint);
@@ -92,6 +92,15 @@ public:
             vec3f specular = spec * tex[SPECULAR].color(uv);
 
             return light.color * (ambient + diffuse + specular);
+        }
+        return vec3f(0.0f);
+    }
+
+    // @brief calculate reflectivity of surface on each of three channels
+    // In case of PHONG lighting model returns the specular component
+    vec3f reflectivity(const vec2f& uv) const {
+        if (type == PHONG) {
+            return tex[SPECULAR].color(uv);
         }
         return vec3f(0.0f);
     }

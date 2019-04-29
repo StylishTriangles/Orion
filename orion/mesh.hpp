@@ -5,21 +5,14 @@
 #include <memory>
 #include <vector>
 
-#include <orion/math.hpp>
 #include <orion/geometry.hpp>
 #include <orion/material.hpp>
+#include <orion/math.hpp>
+#include <orion/vertex.hpp>
 #include <orion/avx/geometry.hpp>
+#include <orion/avx/sbvh.hpp>
 
 namespace orion {
-
-struct Vertex {
-    // position
-    vec3f position;
-    // normal
-    vec3f normal;
-    // texCoords
-    vec2f texCoords;
-};
 
 const unsigned int INVALID_INTERSECT_ID = ~(unsigned int)(0);
 
@@ -46,50 +39,26 @@ public:
         vertices    (tm.vertices),
         indices     (tm.indices),
         triangles   (tm.triangles),
-        pMat        (new Material(*tm.pMat))
+        pMat        (new Material(*tm.pMat)),
+        mTree       (tm.mTree)
     {}
 
-    // move constructor
-    TracedMesh(TracedMesh&& tm) :
-        vertices    (std::move(tm.vertices)),
-        indices     (std::move(tm.indices)),
-        triangles   (std::move(tm.triangles)),
-        pMat        (std::move(tm.pMat)) 
-    {}
+    // // move constructor
+    // TracedMesh(TracedMesh&& tm) :
+    //     vertices    (std::move(tm.vertices)),
+    //     indices     (std::move(tm.indices)),
+    //     triangles   (std::move(tm.triangles)),
+    //     pMat        (std::move(tm.pMat)) 
+    // {}
 
     // constructor
     TracedMesh( const std::vector<Vertex> &vertices, const std::vector<unsigned int> &indices, const Material &mat) :
         vertices(vertices),
         indices(indices),
-        pMat(new Material(mat))
-    {
-        // TODO: Optimize process by not constructing singulat triangles ?
-        assert(indices.size()%3 == 0);
-        const unsigned packSize = PackedTriangles::count;
-        Triangle buffer[packSize];
-
-        int buffer_index = 0;
-        for(unsigned int i = 0; i < this->indices.size(); i += 3)
-        {
-            // transform vertices and indices to triangles
-            Vertex vertexes[3] = {this->vertices[this->indices[i+0]], 
-                                  this->vertices[this->indices[i+1]], 
-                                  this->vertices[this->indices[i+2]]};
-            Triangle t = Triangle(vertexes[0].position,
-                                  vertexes[1].position,
-                                  vertexes[2].position);
-            buffer[buffer_index] = t;
-            buffer_index++;
-
-            if (buffer_index == packSize) {
-                triangles.push_back(PackedTriangles(buffer, packSize));
-                buffer_index %= packSize;
-            }
-        }
-        if (buffer_index != 0) {
-            triangles.push_back(PackedTriangles(buffer, buffer_index));
-        }
-    }
+        triangles(packTriangles(vertices, indices)),
+        pMat(new Material(mat)),
+        mTree(vertices, indices)
+    {}
     
     ~TracedMesh() = default;
 
@@ -100,15 +69,22 @@ public:
                            float &u,
                            float &v) const
     {
-        unsigned int retID = INVALID_INTERSECT_ID;
-        PackedRay pr(orig, dir);
-        for (unsigned int i = 0; i < triangles.size(); i++) {
-            int insideID = triangles[i].intersect(pr, t, u, v);
-            if (insideID >= 0) {
-                retID = PackedTriangles::count * i + insideID;
-            }
-        }
-        return retID;
+        return mTree.intersect(
+            orig,
+            dir,
+            t,
+            u,
+            v
+        );
+        // unsigned int retID = INVALID_INTERSECT_ID;
+        // PackedRay pr(orig, dir);
+        // for (unsigned int i = 0; i < triangles.size(); i++) {
+        //     int insideID = triangles[i].intersect(pr, t, u, v);
+        //     if (insideID >= 0) {
+        //         retID = PackedTriangles::count * i + insideID;
+        //     }
+        // }
+        // return retID;
     }
 
     const Material& material() const {
@@ -137,6 +113,43 @@ public:
         return (1.0f-u-v) * vertices[3*triangleID].texCoords
                 + u * vertices[3*triangleID+1].texCoords
                 + v * vertices[3*triangleID+2].texCoords;
+    }
+
+    int triangleCount() const {
+        return indices.size()/3;
+    }
+
+private:
+    SBVH mTree;
+
+    std::vector<PackedTriangles> packTriangles(const std::vector<Vertex> &vVertices, const std::vector<unsigned int> &vIndices) {
+        assert(indices.size()%3 == 0);
+        const unsigned packSize = PackedTriangles::count;
+        std::vector<PackedTriangles> ret;
+        Triangle buffer[packSize];
+
+        int buffer_index = 0;
+        for(unsigned int i = 0; i < vIndices.size(); i += 3)
+        {
+            // transform vertices and indices to triangles
+            Vertex vertexes[3] = {vVertices[vIndices[i+0]], 
+                                  vVertices[vIndices[i+1]], 
+                                  vVertices[vIndices[i+2]]};
+            Triangle t = Triangle(vertexes[0].position,
+                                  vertexes[1].position,
+                                  vertexes[2].position);
+            buffer[buffer_index] = t;
+            buffer_index++;
+
+            if (buffer_index == packSize) {
+                ret.push_back(PackedTriangles(buffer, packSize));
+                buffer_index %= packSize;
+            }
+        }
+        if (buffer_index != 0) {
+            ret.push_back(PackedTriangles(buffer, buffer_index));
+        }
+        return ret;
     }
 };
 

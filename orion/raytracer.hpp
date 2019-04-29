@@ -22,11 +22,13 @@ public:
     ~RayTracer() = default;
 
     // Simple function to trace a single model described in an rtc file 
-    void traceRTC(const char* rtc_file_name, const char* path_to_image = "raytracer.ppm");
+    void traceRTC(const char* rtc_file_name, const char* path_to_image = "raytracer.png");
 
 protected:
     void savePPM(const char* path_to_image, const std::vector<std::vector<vec3f> > &image);
-    vec3f trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth, bool shadow = false);
+    void savePNG(const char* path_to_image, const std::vector<std::vector<vec3f> > &image);
+
+    vec3f trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth);
 
     /** 
      * @brief Calculate camera vectors based on loaded rtc.
@@ -37,6 +39,8 @@ protected:
      * The top left corner of the screen can be described as front + up - right and bottom right as front - up + right.
      **/
     void calculateCameraVectors(const rtc_data &rtc, vec3f& vecFront, vec3f& vecUp, vec3f& vecRight);
+
+    void printStatistics(TracedModel &m);
 
 private:
     rtc_data rtc;

@@ -45,7 +45,7 @@ public:
     }
 
     uint64_t max() {
-        return uint64_t(-1);
+        return std::numeric_limits<uint64_t>::max();
     }
 
     void seed(uint64_t sd) {
@@ -71,7 +71,6 @@ public:
     /* This is the jump function for the generator. It is equivalent
     to 2^64 calls to next(); it can be used to generate 2^64
     non-overlapping subsequences for parallel computations. */
-
     void jump(void) {
         static const uint64_t JUMP[] = { 0xdf900294d8f554a5, 0x170865df4b3201fc };
 
@@ -94,7 +93,6 @@ public:
     2^96 calls to next(); it can be used to generate 2^32 starting points,
     from each of which jump() will generate 2^32 non-overlapping
     subsequences for parallel distributed computations. */
-
     void long_jump(void) {
         static const uint64_t LONG_JUMP[] = { 0xd2a98b26625eee7b, 0xdddf9b1090aa7ac1 };
 

@@ -20,7 +20,7 @@ void TracedModel::loadModel(string const &path)
 {
     // read file via ASSIMP
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
+    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_CalcTangentSpace);
     // check for errors
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
     {
@@ -85,6 +85,23 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
         }
         else
             vertex.texCoords = vec2f(0.0f, 0.0f);
+
+        if (mesh->HasTangentsAndBitangents()) {
+            // tangent
+            vector = vec3f(
+                mesh->mTangents[i].x,
+                mesh->mTangents[i].y,
+                mesh->mTangents[i].z
+            );
+            vertex.tangent = vector;
+            // bitangent
+            vector = vec3f(
+                mesh->mBitangents[i].x,
+                mesh->mBitangents[i].y,
+                mesh->mBitangents[i].z
+            );
+            vertex.bitangent = vector;
+        }
         
         vertices.push_back(vertex);
     }

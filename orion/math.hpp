@@ -124,8 +124,27 @@ struct alignas(16) vec3f : public vec4f {
 
     // Calculate average value of elements
     float average() const {
-        return (vec[0] + vec[1] + vec[2])/3.0f;
+        return (vec[0] + vec[1] + vec[2])*0.33333333333333f;
     }
+};
+
+// vec3f_compact takes up the minimum size required to store 3 floats
+// and therefore will be stored continuously in an array
+struct vec3f_compact {
+    vec3f_compact() = default;
+
+    vec3f_compact(const vec3f &ref) {
+        float tmp[4];
+        _mm_storeu_ps(tmp, ref.vec);
+        vec[0] = tmp[0];
+        vec[1] = tmp[1];
+        vec[2] = tmp[2];
+    }
+
+    float& operator [] (int index) {return vec[index];}
+    const float& operator [] (int index) const {return vec[index];}
+
+    float vec[3];
 };
 
 // Basic structure to hold 2 floats

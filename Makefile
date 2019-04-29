@@ -13,7 +13,7 @@ VIEWER_OBJ_FILES := $(patsubst $(VIEWER_DIR)/%,$(VIEWER_OBJ_DIR)/%.o,$(VIEWER_SR
 VIEWER_DEPS_SRC := vendor/glad/glad.c vendor/stb_image.cpp
 VIEWER_DEPS_OBJ := $(patsubst %,$(BUILD_DIR)/%.o,$(VIEWER_DEPS_SRC))
 
-ORION_DEPS_SRC := vendor/stb_image.cpp
+ORION_DEPS_SRC := vendor/stb_image.cpp vendor/stb_image_write.cpp
 ORION_DEPS_OBJ := $(patsubst %,$(BUILD_DIR)/%.o,$(ORION_DEPS_SRC))
 
 CC := g++

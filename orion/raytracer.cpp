@@ -3,7 +3,9 @@
 #include <random>
 
 #include <tqdm/tqdm.hpp>
+#include <stb_image_write.h>
 
+#include <orion/array2d.hpp>
 #include <orion/raytracer.hpp>
 #include <orion/random.hpp>
 
@@ -27,7 +29,7 @@ void RayTracer::traceRTC(const char* rtc_file_name, const char* path_to_image)
     // define our image as vector of vectors of colors
     vector<vec3f> vZero(rtc.xres, vec3f(0.0f));
     vector<vector<vec3f> > image(rtc.yres, vZero);
-    
+
     vec3f vecFront, vecUp, vecRight;
     calculateCameraVectors(rtc, vecFront, vecUp, vecRight);
 
@@ -55,7 +57,7 @@ void RayTracer::traceRTC(const char* rtc_file_name, const char* path_to_image)
     printStatistics(m);
 
     // save resulting image as ppm file
-    savePPM(path_to_image, image);
+    savePNG(path_to_image, image);
 }
 
 vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth)
@@ -133,6 +135,30 @@ void RayTracer::savePPM(const char* path_to_image, const std::vector<std::vector
         }
     }
     ofs.close();
+}
+
+void RayTracer::savePNG(const char* path_to_image, const std::vector<std::vector<vec3f> > &image)
+{
+    struct RGB {
+        unsigned char r,g,b,a;
+    };
+    unsigned height = rtc.yres;
+    unsigned width = rtc.xres;
+    Array2D<RGB> exporter(height, width);
+
+    for (unsigned h = 0; h < height; h++) {
+        for (unsigned w = 0; w < width; w++) {
+            exporter[h][w].r = min(1.0f, image[h][w].x())*255;
+            exporter[h][w].g = min(1.0f, image[h][w].y())*255;
+            exporter[h][w].b = min(1.0f, image[h][w].z())*255;
+            exporter[h][w].a = 255;
+        }
+    }
+
+    int ret = stbi_write_png(path_to_image, width, height, 4, exporter.begin(), width*sizeof(RGB));
+    if (ret == 0) {
+        std::cout << "Error ocurred when saving file to " << path_to_image << std::endl;
+    }
 }
 
 void RayTracer::printStatistics(TracedModel &m)

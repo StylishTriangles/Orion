@@ -104,8 +104,8 @@ int main(int argc, char** argv)
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("shaders/untextured.vs", "shaders/untextured.fs");
-    // Shader ourShader("shaders/simple_shader.vs", "shaders/simple_shader.fs");
+    // Shader ourShader("shaders/untextured.vs", "shaders/untextured.fs");
+    Shader ourShader("shaders/simple_shader.vs", "shaders/simple_shader.fs");
     std::cout << "Shaders loaded successfully!" << std::endl;
 
     // load models

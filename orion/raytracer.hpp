@@ -26,7 +26,7 @@ public:
 
 protected:
     void savePPM(const char* path_to_image, const std::vector<std::vector<vec3f> > &image);
-    vec3f trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth, bool shadow = false);
+    vec3f trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth);
 
     /** 
      * @brief Calculate camera vectors based on loaded rtc.

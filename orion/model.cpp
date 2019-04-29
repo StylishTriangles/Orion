@@ -86,20 +86,22 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
         else
             vertex.texCoords = vec2f(0.0f, 0.0f);
 
-        // tangent
-        vector = vec3f(
-            mesh->mTangents[i].x,
-            mesh->mTangents[i].y,
-            mesh->mTangents[i].z
-        );
-        vertex.tangent = vector;
-        // bitangent
-        vector = vec3f(
-            mesh->mBitangents[i].x,
-            mesh->mBitangents[i].y,
-            mesh->mBitangents[i].z
-        );
-        vertex.bitangent = vector;
+        if (mesh->HasTangentsAndBitangents()) {
+            // tangent
+            vector = vec3f(
+                mesh->mTangents[i].x,
+                mesh->mTangents[i].y,
+                mesh->mTangents[i].z
+            );
+            vertex.tangent = vector;
+            // bitangent
+            vector = vec3f(
+                mesh->mBitangents[i].x,
+                mesh->mBitangents[i].y,
+                mesh->mBitangents[i].z
+            );
+            vertex.bitangent = vector;
+        }
         
         vertices.push_back(vertex);
     }

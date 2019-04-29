@@ -96,6 +96,15 @@ public:
         return vec3f(0.0f);
     }
 
+    // @brief calculate reflectivity of surface on each of three channels
+    // In case of PHONG lighting model returns the specular component
+    vec3f reflectivity(const vec2f& uv) const {
+        if (type == PHONG) {
+            return tex[SPECULAR].color(uv);
+        }
+        return vec3f(0.0f);
+    }
+
     void texturesFromSolidColor(const SolidSurface& _sol) {
         setTexture(AMBIENT, _sol.color_ambient);
         setTexture(DIFFUSE, _sol.color_diffuse);

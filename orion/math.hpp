@@ -121,6 +121,11 @@ struct alignas(16) vec3f : public vec4f {
         dp = _mm_rsqrt_ps(dp);
         return _mm_mul_ps(vec, dp);
     }
+
+    // Calculate average value of elements
+    float average() const {
+        return (vec[0] + vec[1] + vec[2])/3.0f;
+    }
 };
 
 // Basic structure to hold 2 floats
@@ -259,7 +264,7 @@ static inline float dot(vec3f a, vec3f b) {
     return _mm_cvtss_f32(_mm_dp_ps(a.vec, b.vec, 0x71));
 }
 
-// calculate vector orthogonal to a 
+// calculate b' orthogonal to a 
 static inline vec3f orthogonalize(vec3f a, vec3f b) {
     __m128 n = _mm_dp_ps(a.vec, b.vec, 0x7f);
     __m128 d = _mm_dp_ps(a.vec, a.vec, 0x7f);

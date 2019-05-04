@@ -30,7 +30,7 @@ namespace orion {
         std::string texture_file;
     };
 
-    rtc_data parse_rtc(const char* path);
+    rtc_data parse_rtc(const std::string& path);
 };
 
 #endif // ORION_RTC_PARSER_HPP

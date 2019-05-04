@@ -14,7 +14,7 @@ using namespace std;
 
 namespace orion {
 
-void RayTracer::traceRTC(const char* rtc_file_name, const char* path_to_image)
+void RayTracer::traceRTC(const std::string& rtc_file_name, const std::string& path_to_image)
 {
     filesystem::path rtc_path(rtc_file_name);
     // directory in which rtc file exists
@@ -122,7 +122,7 @@ void RayTracer::calculateCameraVectors(const rtc_data &rtcd, vec3f& vecFront, ve
     vecRight = vecRight * rtcd.y_view * rtcd.aspect_ratio * 0.5f;
 }
 
-void RayTracer::savePPM(const char* path_to_image, const std::vector<std::vector<vec3f> > &image)
+void RayTracer::savePPM(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image)
 {
     // Save result to a PPM image (keep these flags if you compile under Windows)
     std::ofstream ofs(path_to_image, std::ios::out | std::ios::binary);
@@ -137,7 +137,7 @@ void RayTracer::savePPM(const char* path_to_image, const std::vector<std::vector
     ofs.close();
 }
 
-void RayTracer::savePNG(const char* path_to_image, const std::vector<std::vector<vec3f> > &image)
+void RayTracer::savePNG(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image)
 {
     struct RGB {
         unsigned char r,g,b,a;
@@ -155,7 +155,7 @@ void RayTracer::savePNG(const char* path_to_image, const std::vector<std::vector
         }
     }
 
-    int ret = stbi_write_png(path_to_image, width, height, 4, exporter.begin(), width*sizeof(RGB));
+    int ret = stbi_write_png(path_to_image.c_str(), width, height, 4, exporter.begin(), width*sizeof(RGB));
     if (ret == 0) {
         std::cout << "Error ocurred when saving file to " << path_to_image << std::endl;
     }

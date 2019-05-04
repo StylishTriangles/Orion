@@ -52,13 +52,13 @@ static vec3f load_vec3(istringstream& iss) {
     return vec3f(x, y, z);
 }
 
-rtc_data parse_rtc(const char* path) 
+rtc_data parse_rtc(const std::string& path) 
 {
     rtc_data rtc;
 
     ifstream infile(path);
     if (!infile) {
-        printf("Error opening file %s\n", path);
+        printf("Error opening file %s\n", path.c_str());
         return rtc;
     }
 

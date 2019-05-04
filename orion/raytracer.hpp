@@ -22,11 +22,11 @@ public:
     ~RayTracer() = default;
 
     // Simple function to trace a single model described in an rtc file 
-    void traceRTC(const char* rtc_file_name, const char* path_to_image = "raytracer.png");
+    void traceRTC(const std::string& rtc_file_name, const std::string& path_to_image = "raytracer.png");
 
 protected:
-    void savePPM(const char* path_to_image, const std::vector<std::vector<vec3f> > &image);
-    void savePNG(const char* path_to_image, const std::vector<std::vector<vec3f> > &image);
+    void savePPM(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image);
+    void savePNG(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image);
 
     vec3f trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth);
 

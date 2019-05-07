@@ -151,6 +151,17 @@ public:
         float &v
     ) const;
 
+    vec3f lowerBound() const {
+        if (mRoot != nullptr)
+            return mRoot->bv.lowerBound();
+        return vec3f(0.0f);
+    }
+    vec3f upperBound() const {
+        if (mRoot != nullptr)
+            return mRoot->bv.upperBound();
+        return vec3f(0.0f);
+    }
+
 private:
     std::vector<SBVHTriangle> toTriangles(const std::vector<Vertex>& vertices, const std::vector<unsigned>& indices) const;
 

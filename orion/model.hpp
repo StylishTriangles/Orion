@@ -69,6 +69,22 @@ public:
         return sum;
     }
 
+    vec3f lowerBound() const {
+        vec3f mini(F_INFINITY);
+        for (auto const& mesh: meshes) {
+            mini = min(mini, mesh.lowerBound());
+        }
+        return mini;
+    }
+
+    vec3f upperBound() const {
+        vec3f maxi(-F_INFINITY);
+        for (auto const& mesh: meshes) {
+            maxi = max(maxi, mesh.upperBound());
+        }
+        return maxi;
+    }
+
 private:
     /*  Model Data */
 

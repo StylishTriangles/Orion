@@ -73,7 +73,7 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
     
     // bias will be used to move our ray away from the surface on reflection
     // This value was chosen by trial and error - in a way that primary rays + shadow rays don't generate black pixels
-    const float bias = 3e-5f;
+    const float bias = 1e-3f;
     // calculate normal to surface
     vec3f normal = inter.normal().normalized();
     vec2f uv = inter.texture_uv();

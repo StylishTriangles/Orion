@@ -18,7 +18,7 @@ struct alignas(8)  vec2f;
 
 /** constants **/
 // Flating point infinity or huge value
-const float F_INFINITY = std::numeric_limits<float>::infinity();
+constexpr float F_INFINITY = std::numeric_limits<float>::infinity();
 
 struct alignas(16) vec4f
 {
@@ -134,6 +134,10 @@ struct alignas(16) vec3f : public vec4f {
     // Calculate average value of elements
     float average() const {
         return (vec[0] + vec[1] + vec[2])*0.33333333333333f;
+    }
+
+    float length() const {
+        return _mm_cvtss_f32(_mm_sqrt_ss(_mm_dp_ps(vec, vec, 0x77)));
     }
 
     float length2() const {

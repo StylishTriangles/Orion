@@ -10,12 +10,14 @@ struct Vertex {
     vec3f position;
     // normal
     vec3f normal;
-    // tangent
-    vec3f tangent;
-    // bitangent/binormal
-    vec3f bitangent;
     // texCoords
     vec2f texCoords;
+
+    /** removed from service AD 2019 **/
+    // // tangent
+    // vec3f tangent;
+    // // bitangent/binormal
+    // vec3f bitangent;
 };
 
 }; // namespace orion

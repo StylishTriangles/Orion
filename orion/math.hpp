@@ -18,7 +18,7 @@ struct alignas(8)  vec2f;
 
 /** constants **/
 // Flating point infinity or huge value
-const float F_INFINITY = std::numeric_limits<float>::infinity();
+constexpr float F_INFINITY = std::numeric_limits<float>::infinity();
 
 struct alignas(16) vec4f
 {
@@ -108,6 +108,15 @@ struct alignas(16) vec3f : public vec4f {
     float& w() = delete;
     const float& w() const = delete;
 
+    // load floats from aligned to 16 array of 4 elements
+    void load_aligned(float* array4) {
+        vec = _mm_load_ps(array4);
+    }
+
+    void load_unaligned(float* array4u) {
+        vec = _mm_loadu_ps(array4u);
+    }
+
     /** vec3f math functions **/
 
     void normalize() {
@@ -125,6 +134,14 @@ struct alignas(16) vec3f : public vec4f {
     // Calculate average value of elements
     float average() const {
         return (vec[0] + vec[1] + vec[2])*0.33333333333333f;
+    }
+
+    float length() const {
+        return _mm_cvtss_f32(_mm_sqrt_ss(_mm_dp_ps(vec, vec, 0x77)));
+    }
+
+    float length2() const {
+        return _mm_cvtss_f32(_mm_dp_ps(vec, vec, 0x77));
     }
 };
 
@@ -229,6 +246,10 @@ static inline vec2f operator + (vec2f lhs, vec2f rhs) {
 
 static inline vec2f operator - (vec2f lhs, vec2f rhs) {
     return vec2f(lhs.x()-rhs.x(), lhs.y()-rhs.y());
+}
+
+static inline vec2f operator - (vec2f un) {
+    return vec2f(-un.x(), -un.y());
 }
 
 // Math functions

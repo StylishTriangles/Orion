@@ -119,6 +119,13 @@ public:
         return indices.size()/3;
     }
 
+    vec3f lowerBound() const {
+        return mTree.lowerBound();
+    }
+    vec3f upperBound() const {
+        return mTree.upperBound();
+    }
+
 private:
     SBVH mTree;
 

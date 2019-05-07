@@ -36,6 +36,9 @@ float lastFrame = 0.0f;
 
 GLFWwindow* window = NULL;
 
+// initial camera and lights info
+orion::rtc_data rtc_data;
+
 int main(int argc, char** argv)
 {
     if (argc != 2) {
@@ -45,7 +48,7 @@ int main(int argc, char** argv)
 
     // load lights and camera settings
     std::string rtc_path(argv[1]);
-    orion::rtc_data rtc_data = orion::parse_rtc(rtc_path.c_str());
+    rtc_data = orion::parse_rtc(rtc_path.c_str());
     SCR_WIDTH = rtc_data.xres;
     SCR_HEIGHT = rtc_data.yres;
     lastX = SCR_WIDTH / 2.0f;
@@ -104,8 +107,8 @@ int main(int argc, char** argv)
 
     // build and compile shaders
     // -------------------------
-    // Shader ourShader("shaders/untextured.vs", "shaders/untextured.fs");
-    Shader ourShader("shaders/simple_shader.vs", "shaders/simple_shader.fs");
+    Shader ourShader("shaders/untextured.vs", "shaders/untextured.fs");
+    // Shader ourShader("shaders/simple_shader.vs", "shaders/simple_shader.fs");
     std::cout << "Shaders loaded successfully!" << std::endl;
 
     // load models
@@ -142,7 +145,7 @@ int main(int argc, char** argv)
         ourShader.use();
 
         // view/projection transformations (the default zoom 45 is multiplied by 57/45 so it's about one radian)
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom*57.f/45.f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom*57.f/45.f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
         // glm::mat4 projection = glm::perspective(rtc_data.y_view, rtc_data.aspect_ratio, 0.1f, 100.0f);
         glm::mat4 view = camera.GetViewMatrix();
         ourShader.setMat4("vp", projection * view);
@@ -150,7 +153,7 @@ int main(int argc, char** argv)
         // render the loaded model
         // model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // translate it down so it's at the center of the scene
         // model = glm::scale(model, glm::vec3(0.3f, 0.3f, 0.3f));	// it's a bit too big for our scene, so scale it down
-        model = glm::rotate(model, 0.1f*deltaTime, glm::vec3(0,1,0));
+        // model = glm::rotate(model, 0.1f*deltaTime, glm::vec3(0,1,0));
         ourShader.setMat4("modelMat", model);
         ourShader.setMat4("modelNorm", glm::transpose(glm::inverse(model)));
         // set light
@@ -175,6 +178,18 @@ int main(int argc, char** argv)
     return 0;
 }
 
+// dump current camera data to .rtc file
+void dump_rtc(const std::string& filename)
+{
+    // glm to orion vector transformation
+    auto gto = [](glm::vec3 in) {
+        return orion::vec3f(in.x, in.y, in.z);
+    };
+    rtc_data.view_point = gto(camera.Position);
+    rtc_data.look_at = rtc_data.view_point + gto(camera.Front);
+    orion::write_rtc(filename, rtc_data);
+}
+
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)
@@ -190,6 +205,8 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+        dump_rtc("dump.rtc");
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes

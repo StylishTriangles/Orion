@@ -17,7 +17,12 @@ class MeshIntersection {
 public:
     MeshIntersection() : pMesh(nullptr) {}
 
-    vec3f normal() const { return pMesh->normal(triangleID, uv[0], uv[1]); }
+    vec3f normal() const { 
+        if (material().hasBumpMap())
+            return material().normalBumpMap(surfaceNormal(), texture_uv());
+        return surfaceNormal();
+    }
+    vec3f surfaceNormal() const { return pMesh->normal(triangleID, uv[0], uv[1]); }
     vec2f texture_uv() const { return pMesh->texture_uv(triangleID, uv[0], uv[1]); }
     const Material& material() const { return pMesh->material(); }
     bool intersected() const { return pMesh != nullptr; }
@@ -62,6 +67,22 @@ public:
             sum += mesh.triangleCount();
         }
         return sum;
+    }
+
+    vec3f lowerBound() const {
+        vec3f mini(F_INFINITY);
+        for (auto const& mesh: meshes) {
+            mini = min(mini, mesh.lowerBound());
+        }
+        return mini;
+    }
+
+    vec3f upperBound() const {
+        vec3f maxi(-F_INFINITY);
+        for (auto const& mesh: meshes) {
+            maxi = max(maxi, mesh.upperBound());
+        }
+        return maxi;
     }
 
 private:

@@ -20,13 +20,16 @@ void TracedModel::loadModel(string const &path)
 {
     // read file via ASSIMP
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_CalcTangentSpace);
+    const aiScene* scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
     // check for errors
     if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
     {
         cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
         return;
     }
+    // reduce copy count optimizations
+    textures_loaded.reserve(scene->mNumTextures); 
+    meshes.reserve(scene->mNumMeshes);
     // retrieve the directory path of the filepath
     directory = path.substr(0, path.find_last_of('/'));
     // process ASSIMP's root node recursively
@@ -54,9 +57,13 @@ void TracedModel::processNode(aiNode *node, const aiScene *scene)
 
 TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
 {
+    const int INDICES_PER_FACE = 3;
     // data to fill
     vector<Vertex> vertices;
     vector<unsigned int> indices;
+    // reserve space for data
+    vertices.reserve(mesh->mNumVertices);
+    indices.reserve(mesh->mNumFaces*INDICES_PER_FACE);
 
     // Walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++)
@@ -85,23 +92,6 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
         }
         else
             vertex.texCoords = vec2f(0.0f, 0.0f);
-
-        if (mesh->HasTangentsAndBitangents()) {
-            // tangent
-            vector = vec3f(
-                mesh->mTangents[i].x,
-                mesh->mTangents[i].y,
-                mesh->mTangents[i].z
-            );
-            vertex.tangent = vector;
-            // bitangent
-            vector = vec3f(
-                mesh->mBitangents[i].x,
-                mesh->mBitangents[i].y,
-                mesh->mBitangents[i].z
-            );
-            vertex.bitangent = vector;
-        }
         
         vertices.push_back(vertex);
     }
@@ -161,9 +151,8 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
         m.setTexture(Material::TextureType::DIFFUSE, diffuseMaps[0]);
     if (!specularMaps.empty())
         m.setTexture(Material::TextureType::SPECULAR, diffuseMaps[0]);
-    // TODO: Tangent space
-    // if (!normalMaps.empty())
-    //     m.setTexture(Material::TextureType::BUMP, normalMaps[0]);
+    if (!normalMaps.empty())
+        m.setTexture(Material::TextureType::NORMAL, normalMaps[0]);
     
     // return a mesh object created from the extracted mesh data
     return TracedMesh(vertices, indices, m);

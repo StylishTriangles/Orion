@@ -90,9 +90,11 @@ public:
     }
 
     // isSolidColor can be used to check whether texture is a 1x1 solid color
-    bool isSolidColor() const { return components == 0; }
+    constexpr bool isSolidColor() const { return components == 0; }
 
-    const std::string& filepath() const { return m_path; }
+    constexpr bool empty() const { return components == 0; }
+
+    constexpr const std::string& filepath() const { return m_path; }
 
 private:
     std::string m_path;

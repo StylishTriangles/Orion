@@ -6,6 +6,8 @@ view_test.png
 0.0 7.5 0.0
 0 1 0
 1
-L 0.5 20 10 255 255 250 32
+L -3 10 10 200 200 200 32
+# L -10 10 5 180 40 60 32
+# L 10 10 5 30 50 200 32
 # Test view scene: in OBJ format coords righthanded, CCW faces
 

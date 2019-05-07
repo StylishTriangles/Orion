@@ -87,6 +87,46 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
             color += inter.material().color(dir, normal, hitPos, lght, uv);
     }
 
+    // float dpcolor = dot(normal, inter.surfaceNormal().normalized());
+    // vec3f lightDir = normalize(rtc.lights[0].position - hitPos);
+    // float dpcolor = dot(normal, lightDir);
+    // if (dpcolor > 0)
+    //     color = vec3f(0,dpcolor,0);
+    // if (dpcolor < 0)
+    //     color = vec3f(-dpcolor,0,0);
+
+    // color = (normal + vec3f(1.0f)) * vec3f(0.5f);
+    // color = inter.material().tex[Material::NORMAL].color(inter.texture_uv());
+    // color = (inter.surfaceNormal().normalized() + vec3f(1.0f)) * vec3f(0.5f);
+
+    // if (
+    //     abs(normal.length2() - 1.0f) > 1e-3 ||
+    //     !(normal.x() < 1.001f && normal.x() > -1.001f) ||
+    //     !(normal.y() < 1.001f && normal.y() > -1.001f) ||
+    //     !(normal.z() < 1.001f && normal.z() > -1.001f)
+    // ) {
+    //     vec3f snormal = inter.surfaceNormal().normalized();
+    //     printf("\nnormal:  [%f, %f, %f, %f]\n", normal[0], normal[1], normal[2], normal[3]);
+    //     printf("snormal: [%f, %f, %f, %f]\n", snormal[0], snormal[1], snormal[2], snormal[3]);
+    //     fflush(stdout);
+    //     throw "Normal is fucked";
+    // }
+
+    // if (
+    //     !(color.x() > -1e-3f && color.x() < 1.001f) ||
+    //     !(color.y() > -1e-3f && color.x() < 1.001f) ||
+    //     !(color.z() > -1e-3f && color.x() < 1.001f)
+    // ) {
+    //     vec3f snormal = inter.surfaceNormal().normalized();
+    //     printf("\ncolor:   [%f, %f, %f, %f]\n", color[0], color[1], color[2], color[3]);
+    //     printf("normal:  [%f, %f, %f, %f]\n", normal[0], normal[1], normal[2], normal[3]);
+    //     printf("snormal: [%f, %f, %f, %f]\n", snormal[0], snormal[1], snormal[2], snormal[3]);
+    //     fflush(stdout);
+    //     throw "Color is fucked";
+    // }
+    
+    
+
     // TODO: Tail recursion?
     if (depth > 0)
         color += inter.material().reflectivity(uv) * trace(m, hitPos + normal * bias, reflect(dir, normal), depth-1);

@@ -1,11 +1,13 @@
 nanosuit2/nanosuit2.obj
 view_test.png
-20
+0
 3840 2160
 0.0 7.5 17.0
 0.0 7.5 0.0
 0 1 0
 1
-L 0.5 20 10 255 255 250 32
+L -5 10 10 255 255 255 32
+# L -10 10 5 250 90 120 32
+# L 10 10 5 120 90 250 32
 # Test view scene: in OBJ format coords righthanded, CCW faces
 

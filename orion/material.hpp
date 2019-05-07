@@ -28,7 +28,7 @@ public:
         DIFFUSE = 1,
         SPECULAR = 2,
         EMISSIVE = 3,
-        BUMP = 4,
+        NORMAL = 4,
         SIZE = 5,
     };
     Material() = default;
@@ -65,18 +65,13 @@ public:
 
     // @brief Calculate color of surface with textures
     // @param rayDir: direction of ray hitting this surface
-    // @param normal: normal to the surface
+    // @param normal: normal to the surface (should be normalized)
     // @param hitPoint: point in 3D space at which surface was hit
     // @param light: light structure representing light
     // @param uv: uv mapping of the texture
     vec3f color(const vec3f& rayDir, const vec3f& normal, const vec3f & hitPoint, const Light& light, const vec2f& uv) const {
         if (type == PHONG) {
-            // Use bump map if available
             vec3f norm = normal;
-            if (!tex[BUMP].isSolidColor()) {
-                norm = tex[BUMP].color(uv);
-            }
-            norm.normalize();
             // Ambient
             vec3f ambient = tex[AMBIENT].color(uv);
 
@@ -105,6 +100,9 @@ public:
         return vec3f(0.0f);
     }
 
+    // @brief calculate normal using material's bump map
+    vec3f normalBumpMap(vec3f normal, vec3f tangent, vec3f bitangent, const vec2f& uv) const;
+
     void texturesFromSolidColor(const SolidSurface& _sol) {
         setTexture(AMBIENT, _sol.color_ambient);
         setTexture(DIFFUSE, _sol.color_diffuse);
@@ -115,6 +113,8 @@ public:
     void setTexture(TextureType type, const Texture& texture) {
         tex[type] = texture;
     }
+
+    constexpr bool hasBumpMap() const { return !tex[NORMAL].empty(); }
 
     Texture tex[TextureType::SIZE];
     SolidSurface sol;

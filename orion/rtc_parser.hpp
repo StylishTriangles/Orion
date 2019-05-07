@@ -31,6 +31,8 @@ namespace orion {
     };
 
     rtc_data parse_rtc(const std::string& path);
+    
+    void write_rtc(const std::string& path, const rtc_data& rtc);
 };
 
 #endif // ORION_RTC_PARSER_HPP

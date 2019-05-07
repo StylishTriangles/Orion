@@ -8,7 +8,6 @@ namespace orion {
 template<class T>
 class Array2D {
 public:
-
     Array2D() : 
         mArray(nullptr) {}
     
@@ -75,7 +74,7 @@ public:
         return mArray + mWidth*mHeight;
     }
 
-// private:
+private:
     void allocate(uint64_t height, uint64_t width) {
         mHeight = height;
         mWidth = width;

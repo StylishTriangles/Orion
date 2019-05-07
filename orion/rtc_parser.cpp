@@ -52,6 +52,20 @@ static vec3f load_vec3(istringstream& iss) {
     return vec3f(x, y, z);
 }
 
+struct vec3fdump {
+    float x,y,z;
+};
+
+static vec3fdump dump(vec3f v) {
+    vec3fdump ret = {v.x(), v.y(), v.z()};
+    return ret;
+}
+
+static ofstream& operator << (ofstream& of, const vec3fdump& v) {
+    of << v.x << ' ' << v.y << ' ' << v.z;
+    return of;
+}
+
 rtc_data parse_rtc(const std::string& path) 
 {
     rtc_data rtc;
@@ -117,6 +131,35 @@ rtc_data parse_rtc(const std::string& path)
     }
 
     return rtc;
+}
+
+void write_rtc(const std::string& path, const rtc_data& rtc) {
+    ofstream outfile(path);
+    if (!outfile) {
+        printf("Error opening file %s\n", path.c_str());
+        return;
+    }
+
+    outfile << "# RTC dump from rviewer\n";
+    outfile << rtc.obj_file << '\n';
+    outfile << rtc.texture_file << '\n';
+    outfile << rtc.recursion_level << '\n';
+    outfile << rtc.xres << ' ' << rtc.yres << '\n';
+    outfile << dump(rtc.view_point) << '\n';
+    outfile << dump(rtc.look_at) << '\n';
+    outfile << dump(rtc.vector_up) << '\n';
+    outfile << rtc.y_view << '\n';
+
+    for (auto const& light: rtc.lights) {
+        vec3f vcolor = light.color * 255.0f;
+        int col[3] = {int(vcolor[0]), int(vcolor[1]), int(vcolor[2])};
+        outfile << "L ";
+        outfile << dump(light.position) << ' ';
+        outfile << col[0] << ' ' << col[1] << ' ' << col[2] << ' ';
+        outfile << light.intensity;
+    }
+    outfile << '\n';
+    outfile.close();
 }
 
 };

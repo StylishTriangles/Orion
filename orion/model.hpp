@@ -17,7 +17,14 @@ class MeshIntersection {
 public:
     MeshIntersection() : pMesh(nullptr) {}
 
-    vec3f normal() const { return pMesh->normal(triangleID, uv[0], uv[1]); }
+    vec3f normal() const { 
+        if (material().hasBumpMap())
+            return material().normalBumpMap(surfaceNormal(), tangent(), bitangent(), texture_uv());
+        return surfaceNormal();
+    }
+    vec3f surfaceNormal() const { return pMesh->normal(triangleID, uv[0], uv[1]); }
+    vec3f tangent() const { return pMesh->tangent(triangleID, uv[0], uv[1]); }
+    vec3f bitangent() const { return pMesh->bitangent(triangleID, uv[0], uv[1]); }
     vec2f texture_uv() const { return pMesh->texture_uv(triangleID, uv[0], uv[1]); }
     const Material& material() const { return pMesh->material(); }
     bool intersected() const { return pMesh != nullptr; }

@@ -44,6 +44,7 @@ void RayTracer::traceRTC(const std::string& rtc_file_name, const std::string& pa
     auto progress = tq::trange(int(rtc.yres));
     progress.set_prefix("Raytracing ");
     for (int i: progress) {
+        #pragma omp parallel for
         for (int j = 0; j < rtc.xres; j++) {
             float x = 2 * (float(j) / float(rtc.xres)) - 1;
             float y = 2 * (float(i) / float(rtc.yres)) - 1;
@@ -62,7 +63,7 @@ void RayTracer::traceRTC(const std::string& rtc_file_name, const std::string& pa
 
 vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth)
 {
-    vec3f color = 0.0f;
+    vec3f color = 0.1f;
     // nearest intersection
     float tnear = F_INFINITY;
     
@@ -76,13 +77,16 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
     const float bias = 1e-3f;
     // calculate normal to surface
     vec3f normal = inter.normal().normalized();
+    vec3f snormal = inter.surfaceNormal().normalized();
+    normal = snormal;
+    // normal = snormal;
     vec2f uv = inter.texture_uv();
     // calculate point where ray hits the surface
     vec3f hitPos = origin + dir * tnear;
 
     for (Light const& lght: rtc.lights) {
         float tnear2 = F_INFINITY;
-        MeshIntersection inter2 = m.intersect(hitPos+(bias*normal), lght.position-hitPos, tnear2);
+        MeshIntersection inter2 = m.intersect(hitPos+(bias*snormal), lght.position-hitPos, tnear2);
         if (!inter2.intersected())
             color += inter.material().color(dir, normal, hitPos, lght, uv);
     }
@@ -90,8 +94,10 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
     // TODO: Tail recursion?
     if (depth > 0) {
         // TODO: recognize the edge case where normal is in the opposite direction from surfaceNormal
-        color += inter.material().reflectivity(uv) * trace(m, hitPos + inter.surfaceNormal().normalized() * bias, reflect(dir, normal), depth-1);
+        color += inter.material().reflectivity(uv) * trace(m, hitPos + normal*bias, reflect(dir, normal), depth-1);
     }
+
+    // color = (normal+1) / 2;
 
     return color;
 }

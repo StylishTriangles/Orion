@@ -151,11 +151,16 @@ struct vec3f_compact {
     vec3f_compact() = default;
 
     vec3f_compact(const vec3f &ref) {
-        float tmp[4];
-        _mm_storeu_ps(tmp, ref.vec);
+        alignas(16) float tmp[4];
+        _mm_store_ps(tmp, ref.vec);
         vec[0] = tmp[0];
         vec[1] = tmp[1];
         vec[2] = tmp[2];
+    }
+
+    operator vec3f() const {
+        const __m128i mask = _mm_set_epi32(0,-1,-1,-1);
+        return vec3f(_mm_maskload_ps(vec, mask));
     }
 
     float& operator [] (int index) {return vec[index];}
@@ -347,6 +352,16 @@ inline vec3f min<vec3f>(const vec3f& a, const vec3f& b) {
 template <>
 inline vec3f max<vec3f>(const vec3f& a, const vec3f& b) {
     return _mm_max_ps(a.vec, b.vec);
+}
+
+template <>
+inline vec3f_compact min<vec3f_compact>(const vec3f_compact& a, const vec3f_compact& b) {
+    return min(vec3f(a), vec3f(b));
+}
+
+template <>
+inline vec3f_compact max<vec3f_compact>(const vec3f_compact& a, const vec3f_compact& b) {
+    return max(vec3f(a), vec3f(b));
 }
 
 template <>

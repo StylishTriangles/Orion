@@ -20,7 +20,7 @@ VIEWER_DEPS_OBJ := $(patsubst %,$(BUILD_DIR)/%.o,$(VIEWER_DEPS_SRC))
 CC := g++
 LDFLAGS := -lGLEW -lglfw3 -lGL -lGLU -lassimp -ldl -lstdc++fs
 LDPATHS := -L/usr/lib64
-CPPFLAGS := -O3 -MMD -g -mavx -mfma -mbmi
+CPPFLAGS := -O3 -MMD -g -mavx -mfma -mbmi -fopenmp
 CXXFLAGS := -Wall -Wextra -std=c++17
 CFLAGS := 
 INCLUDE_PATHS := -I. -Ivendor

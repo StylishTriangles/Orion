@@ -78,7 +78,6 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
     // calculate normal to surface
     vec3f normal = inter.normal().normalized();
     vec3f snormal = inter.surfaceNormal().normalized();
-    normal = snormal;
     // normal = snormal;
     vec2f uv = inter.texture_uv();
     // calculate point where ray hits the surface

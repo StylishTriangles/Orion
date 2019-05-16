@@ -99,23 +99,23 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
         else
             vertex.texCoords = vec2f(0.0f, 0.0f);
         
-        if (mesh->HasTangentsAndBitangents()) {
-            vector = vec3f(mesh->mTangents[i].x,
-                           mesh->mTangents[i].y,
-                           mesh->mTangents[i].z);
-            // vertex.tangent = orthogonalize(vertex.normal, vector).normalized();
-            vertex.tangent = vector;
-            // vertex.tangent = orthogonalize(vertex.normal, vertex.tangent).normalized();
+        // if (mesh->HasTangentsAndBitangents()) {
+        //     vector = vec3f(mesh->mTangents[i].x,
+        //                    mesh->mTangents[i].y,
+        //                    mesh->mTangents[i].z);
+        //     // vertex.tangent = orthogonalize(vertex.normal, vector).normalized();
+        //     vertex.tangent = vector;
+        //     // vertex.tangent = orthogonalize(vertex.normal, vertex.tangent).normalized();
 
-            vector = vec3f(mesh->mBitangents[i].x,
-                           mesh->mBitangents[i].y,
-                           mesh->mBitangents[i].z);
-            vertex.bitangent = vector;
-            // vertex.bitangent = cross(vertex.normal, vertex.tangent);
-        } else {
-            vertex.tangent = vec3f(10.0f);
-            vertex.bitangent = vec3f(10.0f);
-        }
+        //     vector = vec3f(mesh->mBitangents[i].x,
+        //                    mesh->mBitangents[i].y,
+        //                    mesh->mBitangents[i].z);
+        //     vertex.bitangent = vector;
+        //     // vertex.bitangent = cross(vertex.normal, vertex.tangent);
+        // } else {
+        //     vertex.tangent = vec3f(10.0f);
+        //     vertex.bitangent = vec3f(10.0f);
+        // }
         
         vertices.push_back(vertex);
     }

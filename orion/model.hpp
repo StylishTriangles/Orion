@@ -18,8 +18,8 @@ public:
     MeshIntersection() : pMesh(nullptr) {}
 
     vec3f normal() const { 
-        if (material().hasBumpMap())
-            return material().normalBumpMap(surfaceNormal(), pMesh->tangent(triangleID, uv[0], uv[1]), pMesh->bitangent(triangleID, uv[0], uv[1]), texture_uv());
+        // if (material().hasBumpMap())
+            // return material().normalBumpMap(surfaceNormal(), pMesh->tangent(triangleID, uv[0], uv[1]), pMesh->bitangent(triangleID, uv[0], uv[1]), texture_uv());
         return surfaceNormal();
     }
     vec3f surfaceNormal() const { return pMesh->normal(triangleID, uv[0], uv[1]); }

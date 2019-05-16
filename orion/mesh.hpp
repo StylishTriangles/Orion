@@ -119,23 +119,18 @@ public:
                 + u * vertices[indices[3*triangleID+1]].normal
                 + v * vertices[indices[3*triangleID+2]].normal;
     }
-    /** @brief Interpolate normal using uv values from intersection
-     *  @param triangleID: id of intersected triangle
-     *  @param u: distance along one edge of triangle [0.0-1.0]
-     *  @param v: distance along second edge of triangle [0.0-1.0]
-     *  @returns Interpolated normal
-     **/
-    vec3f tangent(unsigned int triangleID, float u, float v) const {
-        return (1.0f-u-v) * vertices[indices[3*triangleID]].tangent
-                + u * vertices[indices[3*triangleID+1]].tangent
-                + v * vertices[indices[3*triangleID+2]].tangent;
-    }
+    
+    // vec3f tangent(unsigned int triangleID, float u, float v) const {
+    //     return (1.0f-u-v) * vertices[indices[3*triangleID]].tangent
+    //             + u * vertices[indices[3*triangleID+1]].tangent
+    //             + v * vertices[indices[3*triangleID+2]].tangent;
+    // }
 
-    vec3f bitangent(unsigned int triangleID, float u, float v) const {
-        return (1.0f-u-v) * vertices[indices[3*triangleID]].bitangent
-                + u * vertices[indices[3*triangleID+1]].bitangent
-                + v * vertices[indices[3*triangleID+2]].bitangent;
-    }
+    // vec3f bitangent(unsigned int triangleID, float u, float v) const {
+    //     return (1.0f-u-v) * vertices[indices[3*triangleID]].bitangent
+    //             + u * vertices[indices[3*triangleID+1]].bitangent
+    //             + v * vertices[indices[3*triangleID+2]].bitangent;
+    // }
 
     /** @brief Interpolate texture uvs
      *  @param triangleID: id of intersected triangle

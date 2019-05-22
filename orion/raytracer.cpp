@@ -63,11 +63,14 @@ void RayTracer::traceRTC(const std::string& rtc_file_name, const std::string& pa
 
 vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth)
 {
-    vec3f color = 0.1f;
+    vec3f color = 0.02f;
     // nearest intersection
     float tnear = F_INFINITY;
-    
-    MeshIntersection inter = m.intersect(origin, dir, tnear);
+
+    Intersector<TracedModel> intersector;
+    Intersector<TracedModel>::Intersection<1> inter;
+
+    intersector.intersect(PackedRay<1>(origin, dir), m, inter);
     // triangle not hit
     if (!inter.intersected())
         return color;
@@ -85,7 +88,10 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
 
     for (Light const& lght: rtc.lights) {
         float tnear2 = F_INFINITY;
-        MeshIntersection inter2 = m.intersect(hitPos+(bias*snormal), lght.position-hitPos, tnear2);
+        Intersector<TracedModel>::Intersection<1> inter2;
+        PackedRay<1> shadowRay(hitPos+(bias*snormal), lght.position-hitPos);
+        intersector.intersect(shadowRay, m, inter2);
+
         if (!inter2.intersected())
             color += inter.material().color(dir, normal, hitPos, lght, uv);
     }

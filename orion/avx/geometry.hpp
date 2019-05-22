@@ -5,13 +5,14 @@
 
 #include <orion/geometry.hpp>
 #include <orion/math.hpp>
+#include <orion/ray.hpp>
 #include <orion/avx/math.hpp>
 
 namespace orion {
 
-struct PackedRay {
+struct PackedRay8f {
     // construct packed ray from simple single ray
-    PackedRay(vec3f std_origin, vec3f std_direction) {
+    PackedRay8f(vec3f std_origin, vec3f std_direction) {
         origin[0].fill(std_origin.x());
         origin[1].fill(std_origin.y());
         origin[2].fill(std_origin.z());
@@ -55,17 +56,17 @@ public:
                 curr = tArray + i ;
             }
 
-            v0_raw[ 0+i] = curr->v0.x();
-            v0_raw[ 8+i] = curr->v0.y();
-            v0_raw[16+i] = curr->v0.z();
+            v0_raw[ 0+i] = curr->v0[0];
+            v0_raw[ 8+i] = curr->v0[1];
+            v0_raw[16+i] = curr->v0[2];
 
-            e1_raw[ 0+i] = curr->e1.x();
-            e1_raw[ 8+i] = curr->e1.y();
-            e1_raw[16+i] = curr->e1.z();
+            e1_raw[ 0+i] = curr->e1[0];
+            e1_raw[ 8+i] = curr->e1[1];
+            e1_raw[16+i] = curr->e1[2];
 
-            e2_raw[ 0+i] = curr->e2.x();
-            e2_raw[ 8+i] = curr->e2.y();
-            e2_raw[16+i] = curr->e2.z();
+            e2_raw[ 0+i] = curr->e2[0];
+            e2_raw[ 8+i] = curr->e2[1];
+            e2_raw[16+i] = curr->e2[2];
         }
         for (int i = 0; i < 3; i++) {
             v0[i].load_aligned(v0_raw+(i*8));
@@ -83,7 +84,7 @@ public:
      * @returns int: index of intersected triangle (-1 on failure)
      * parameters u and v could be used for texture UV mapping.
      **/
-    int intersect(const PackedRay &ray,
+    int intersect(const PackedRay8f &ray,
                   float &t, 
                   float &u, 
                   float &v) const 
@@ -264,7 +265,7 @@ public:
      *  @param tmax: further point of intersection
      *  note: TRUE = 0xFFFFFFFF, FALSE = 0x00000000
      **/
-    void intersect(const PackedRay& ray, vec8i& intersectionMask, vec8f& tmin, vec8f& tmax) {
+    void intersect(const PackedRay8f& ray, vec8i& intersectionMask, vec8f& tmin, vec8f& tmax) {
         const vec8f zero = vec8f(0.0f);
 
         vec8f t1[3];

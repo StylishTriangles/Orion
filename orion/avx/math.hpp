@@ -7,6 +7,24 @@
 
 namespace orion {
 
+template<unsigned size>
+class Vec3f {
+public:
+
+union {
+__m256 stuff[3];
+};
+};
+
+template<unsigned size>
+Vec3f<size> operator+ (const Vec3f<size>& lhs, const Vec3f<size>& rhs) {
+    Vec3f<size> res;
+    for (int i = 0; i < 3; i++) {
+        res.stuff[i] = lhs.stuff[i] + rhs.stuff[i];
+    }
+    return res;
+}
+
 struct vec8f {
 
     // default constructor - no guarantees

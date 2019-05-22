@@ -20,7 +20,7 @@ const unsigned int INVALID_INTERSECT_ID = ~(unsigned int)(0);
 // TracedMesh is a triangle mesh tailored for raytracing.
 // It's based on the Mesh class and has a name distingiushing it from the original.
 // For now it's very simple, but it may change as the raytracer evolves! :)
-class TracedMesh
+class TracedMesh : public Primitive
 {
 public:
     /*  Mesh Data  */
@@ -29,7 +29,7 @@ public:
     std::vector<PackedTriangles> triangles;
     std::unique_ptr<Material> pMat; // on top of this will be applied textures
     BVH<Triangle> mT2;
-    SBVH mTree;
+    // SBVH mTree;
 
     // Textures are cut from this Mesh at the moment
 
@@ -42,8 +42,8 @@ public:
         vertices    (tm.vertices),
         indices     (tm.indices),
         triangles   (tm.triangles),
-        pMat        (new Material(*tm.pMat)),
-        mTree       (tm.mTree)
+        pMat        (new Material(*tm.pMat))
+        // mTree       (tm.mTree)
     {}
 
     // // move constructor
@@ -59,8 +59,8 @@ public:
         vertices(vertices),
         indices(indices),
         triangles(packTriangles(vertices, indices)),
-        pMat(new Material(mat)),
-        mTree(vertices, indices)
+        pMat(new Material(mat))
+        // mTree(vertices, indices)
     {
         std::vector<Triangle> tris;
         for(unsigned int i = 0; i < indices.size(); i += 3)
@@ -72,6 +72,7 @@ public:
             Triangle t = Triangle(vertexes[0].position,
                                   vertexes[1].position,
                                   vertexes[2].position);
+            t.id = i/3;
             tris.push_back(t);
         }
         mT2 = std::move(BVH<Triangle>(std::move(tris)));
@@ -80,19 +81,19 @@ public:
     ~TracedMesh() = default;
 
     // @returns triangleID with which ray intersects
-    unsigned int intersect(const vec3f &orig, 
-                           const vec3f &dir,
-                           float &t,
-                           float &u,
-                           float &v) const
-    {
-        return mTree.intersect(
-            orig,
-            dir,
-            t,
-            u,
-            v
-        );
+    // unsigned int intersect(const vec3f &orig, 
+    //                        const vec3f &dir,
+    //                        float &t,
+    //                        float &u,
+    //                        float &v) const
+    // {
+        // return mTree.intersect(
+        //     orig,
+        //     dir,
+        //     t,
+        //     u,
+        //     v
+        // );
         // unsigned int retID = INVALID_INTERSECT_ID;
         // PackedRay pr(orig, dir);
         // for (unsigned int i = 0; i < triangles.size(); i++) {
@@ -102,7 +103,7 @@ public:
         //     }
         // }
         // return retID;
-    }
+    // }
 
     const Material& material() const {
         return *pMat;
@@ -149,10 +150,10 @@ public:
     }
 
     vec3f lowerBound() const {
-        return mTree.lowerBound();
+        return mT2.lowerBound();
     }
     vec3f upperBound() const {
-        return mTree.upperBound();
+        return mT2.upperBound();
     }
 
     Triangle triangleAt(unsigned index) const {
@@ -197,6 +198,73 @@ private:
     }
 };
 
+template <>
+class Intersector<TracedMesh> {
+public:
+    template <unsigned size> 
+    class Intersection;
+
+    template<unsigned size>
+    void intersect(
+        const PackedRay<size>& r,
+        const TracedMesh& mesh,
+        Intersection<size>& res
+    ) {
+        Intersector<BVH<Triangle>> inter;
+        Intersector<BVH<Triangle>>::Intersection<size> tmp_res;
+        for (unsigned i = 0; i < size; i++) {
+            tmp_res[i].t = res[i].t;
+        }
+        inter.intersect(r, mesh.mT2, tmp_res);
+        for (unsigned i = 0; i < size; i++) {
+            if (tmp_res[i].t < res[i].t) {
+                res[i].t = tmp_res[i].t;
+                res[i].uv = vec2f(tmp_res[i].u, tmp_res[i].v);
+                res[i].pMesh = &mesh;
+                res[i].triangleID = tmp_res[i].triangleID;
+            }
+        }
+
+    }
 };
+
+template <>
+class Intersector<TracedMesh>::Intersection<1> {
+public:
+    Intersection() : pMesh(nullptr), t(F_INFINITY) {}
+
+    vec3f normal() const { 
+        // if (material().hasBumpMap())
+            // return material().normalBumpMap(surfaceNormal(), pMesh->tangent(triangleID, uv[0], uv[1]), pMesh->bitangent(triangleID, uv[0], uv[1]), texture_uv());
+        return surfaceNormal();
+    }
+    vec3f surfaceNormal() const { return pMesh->normal(triangleID, uv[0], uv[1]); }
+    vec2f texture_uv() const { return pMesh->texture_uv(triangleID, uv[0], uv[1]); }
+    const Material& material() const { return pMesh->material(); }
+    bool intersected() const { return pMesh != nullptr; }
+    
+    /** Members **/
+    const TracedMesh* pMesh;
+    unsigned int triangleID;
+    vec2f uv;
+    float t;
+};
+
+template <unsigned size>
+class Intersector<TracedMesh>::Intersection {
+public:
+    public:
+    Intersector<TracedModel>::Intersection<1>& operator[] (unsigned index) {
+        return mInt[index];
+    }
+
+    const Intersector<TracedModel>::Intersection<1>& operator[] (unsigned index) const {
+        return mInt[index];
+    }
+private:
+    Intersector<TracedModel>::Intersection<1> mInt[size];
+};
+
+}; // namespace orion
 
 #endif // ORION_MESH_HPP

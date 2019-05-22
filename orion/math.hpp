@@ -146,7 +146,7 @@ struct alignas(16) vec3f : public vec4f {
 };
 
 // vec3f_compact takes up the minimum size required to store 3 floats
-// and therefore will be stored continuously in an array
+// and therefore can be stored continuously in an array
 struct vec3f_compact {
     vec3f_compact() = default;
 
@@ -159,13 +159,13 @@ struct vec3f_compact {
     }
 
     operator vec3f() const {
-        const __m128i mask = _mm_set_epi32(0,-1,-1,-1);
-        return vec3f(_mm_maskload_ps(vec, mask));
+        return vec3f(vec[0], vec[1], vec[2]);
     }
 
     float& operator [] (int index) {return vec[index];}
     const float& operator [] (int index) const {return vec[index];}
 
+private:
     float vec[3];
 };
 

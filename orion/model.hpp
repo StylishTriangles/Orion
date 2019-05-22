@@ -13,30 +13,30 @@
 
 namespace orion {
 
-class MeshIntersection {
-public:
-    MeshIntersection() : pMesh(nullptr) {}
+// class MeshIntersection {
+// public:
+//     MeshIntersection() : pMesh(nullptr) {}
 
-    vec3f normal() const { 
-        // if (material().hasBumpMap())
-            // return material().normalBumpMap(surfaceNormal(), pMesh->tangent(triangleID, uv[0], uv[1]), pMesh->bitangent(triangleID, uv[0], uv[1]), texture_uv());
-        return surfaceNormal();
-    }
-    vec3f surfaceNormal() const { return pMesh->normal(triangleID, uv[0], uv[1]); }
-    vec2f texture_uv() const { return pMesh->texture_uv(triangleID, uv[0], uv[1]); }
-    const Material& material() const { return pMesh->material(); }
-    bool intersected() const { return pMesh != nullptr; }
+//     vec3f normal() const { 
+//         // if (material().hasBumpMap())
+//             // return material().normalBumpMap(surfaceNormal(), pMesh->tangent(triangleID, uv[0], uv[1]), pMesh->bitangent(triangleID, uv[0], uv[1]), texture_uv());
+//         return surfaceNormal();
+//     }
+//     vec3f surfaceNormal() const { return pMesh->normal(triangleID, uv[0], uv[1]); }
+//     vec2f texture_uv() const { return pMesh->texture_uv(triangleID, uv[0], uv[1]); }
+//     const Material& material() const { return pMesh->material(); }
+//     bool intersected() const { return pMesh != nullptr; }
     
-    /** Members **/
-    const TracedMesh* pMesh;
-    unsigned int triangleID;
-    vec2f uv;
-}; // class MeshIntersection
+//     /** Members **/
+//     const TracedMesh* pMesh;
+//     unsigned int triangleID;
+//     vec2f uv;
+// }; // class MeshIntersection
 
 // TracedModel is a class representing a 3D model imported with the Assimp library.
 // source code is based on the Model class with some adaptations to make it easier to use in raytracing.
 // This class uses name TracedModel to distinguish it from other Model type.
-class TracedModel
+class TracedModel : public Primitive
 {
 public:
     /*  Functions   */
@@ -49,17 +49,17 @@ public:
         loadModel(path);
     }
 
-    MeshIntersection intersect(const vec3f& origin, const vec3f &dir, float &t) {
-        MeshIntersection ret;
-        for (TracedMesh const& tm: meshes) {
-            unsigned int triangleID = tm.intersect(origin, dir, t, ret.uv[0], ret.uv[1]);
-            if (triangleID != INVALID_INTERSECT_ID) {
-                ret.pMesh = &tm;
-                ret.triangleID = triangleID;
-            }
-        }
-        return ret;
-    }
+    // MeshIntersection intersect(const vec3f& origin, const vec3f &dir, float &t) {
+    //     MeshIntersection ret;
+    //     for (TracedMesh const& tm: meshes) {
+    //         unsigned int triangleID = tm.intersect(origin, dir, t, ret.uv[0], ret.uv[1]);
+    //         if (triangleID != INVALID_INTERSECT_ID) {
+    //             ret.pMesh = &tm;
+    //             ret.triangleID = triangleID;
+    //         }
+    //     }
+    //     return ret;
+    // }
 
     int triangleCount() {
         int sum = 0;
@@ -106,6 +106,25 @@ private:
     std::vector<Texture> loadMaterialTextures(aiMaterial *mat, aiTextureType type);
 };
 
+template<>
+class Intersector<TracedModel> {
+public:
+    template<unsigned size>
+    using Intersection = Intersector<TracedMesh>::Intersection;
+
+    template<unsigned size>
+    void intersect (
+        const PackedRay<size>& r,
+        const TracedModel& model,
+        Intersection<size>& res
+    ) {
+        Intersector<TracedMesh> inter;
+        for (unsigned i = 0; i < model.meshes.size(); i++) {
+            inter.intersect(r, model.meshes[i], res);
+        }
+    }
 };
+
+}; // namespace orion
 
 #endif // ORION_MODEL_HPP

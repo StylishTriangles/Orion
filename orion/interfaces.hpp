@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <typeinfo>
+
 #include <orion/AABB.hpp>
 
 namespace orion {
@@ -26,7 +28,10 @@ public:
 };
 
 template <class IntersectedType>
-class Intersector {};
+class Intersector {
+    template <unsigned size>
+    class Intersection {};
+};
 
 /** 
  *  @tparam IntersectedType: type which is bein intersected

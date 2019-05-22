@@ -7,6 +7,7 @@
 #include <array>
 #include <vector>
 #include <orion/interfaces.hpp>
+#include <orion/ray.hpp>
 
 namespace orion {
 
@@ -344,42 +345,66 @@ inline unsigned BVH<Element>::recursiveConstruct(const Strategy& strategy, std::
 template <class Element>
 class Intersector<BVH<Element>> {
 public:
-    typedef typename Element::Intersection Intersection;
+    template <unsigned size>
+    using Intersection = typename Intersector<Element>::Intersection;
 
     /**
      *  @param r: ray for which intersections are checked
      */
+    template <unsigned size>
     void intersect(
-        const Ray& r,
+        const PackedRay<size>& r,
         const BVH<Element>& tree,
-        Intersection& res
+        Intersection<size>& res
     ) const {
         traverse(r, tree, res, tree.root());
     }
 private:
+    template <unsigned size>
     void traverse(
-        const Ray& r,
+        const PackedRay<size>& r,
         const BVH<Element>& tree,
-        Intersection& res,
+        Intersection<size>& res,
         typename BVH<Element>::NodeIterator it
-    ) const {
-        float tmin, tmax;
-        if (!it->boundingBox().intersect(r.orig, r.dir, tmin, tmax)) {
-            return;
-        }
-        if (it->isLeaf()) {
-            // intersect ray wih all children
-            auto elementIntersector = getIntersector<Element>();
-            auto eit = it.elementsBegin();
-            while (eit != it.elementsEnd()) {
-                elementIntersector.intersect(r, *eit, res);
-                ++eit;
-            }
-        } else {
-            traverse(r, tree, res, it.leftChild());
-            traverse(r, tree, res, it.rightChild());
-        }
-    }
+    ) const;
 };
 
+template <class Element>
+void Intersector<BVH<Element>>::traverse<1>(
+    const PackedRay<1>& r,
+    const BVH<Element>& tree,
+    Intersection<1>& res,
+    typename BVH<Element>::NodeIterator it
+) const {
+    float tmin, tmax;
+    if (!it->boundingBox().intersect(r.orig, r.dir, tmin, tmax)) {
+        return;
+    }
+    if (it->isLeaf()) {
+        // intersect ray wih all children
+        auto elementIntersector = getIntersector<Element>();
+        auto eit = it.elementsBegin();
+        while (eit != it.elementsEnd()) {
+            elementIntersector.intersect(r, *eit, res);
+            ++eit;
+        }
+    } else {
+        traverse(r, tree, res, it.leftChild());
+        traverse(r, tree, res, it.rightChild());
+    }
 }
+
+template <class Element>
+template <unsigned size>
+void Intersector<BVH<Element>>::traverse(
+    const PackedRay<size>& r,
+    const BVH<Element>& tree,
+    Intersection<size>& res,
+    typename BVH<Element>::NodeIterator it
+) const {
+    // TODO: make it more parallelish
+    for (unsigned i = 0; i < size; i++)
+        traverse(r[i], tree, res[i], it);
+}
+
+}; // namespace orion

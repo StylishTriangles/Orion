@@ -101,7 +101,7 @@ public:
     }
 
     // @brief calculate normal using material's bump map
-    vec3f normalBumpMap(vec3f normal, const vec2f& uv) const;
+    vec3f normalBumpMap(vec3f normal, vec3f tangent, vec3f bitangent, const vec2f& uv) const;
 
     void texturesFromSolidColor(const SolidSurface& _sol) {
         setTexture(AMBIENT, _sol.color_ambient);

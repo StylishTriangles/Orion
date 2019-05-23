@@ -44,6 +44,8 @@ protected:
 
 private:
     rtc_data rtc;
+    // During reflection, rays' positions are adjusted proportionally to the value of bias
+    float bias;
 };
 
 };

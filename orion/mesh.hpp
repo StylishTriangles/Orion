@@ -9,6 +9,7 @@
 #include <orion/material.hpp>
 #include <orion/math.hpp>
 #include <orion/vertex.hpp>
+#include <orion/bvh.hpp>
 #include <orion/avx/geometry.hpp>
 #include <orion/avx/sbvh.hpp>
 
@@ -27,6 +28,8 @@ public:
     std::vector<unsigned int> indices;
     std::vector<PackedTriangles> triangles;
     std::unique_ptr<Material> pMat; // on top of this will be applied textures
+    BVH<Triangle> mT2;
+    SBVH mTree;
 
     // Textures are cut from this Mesh at the moment
 
@@ -58,7 +61,21 @@ public:
         triangles(packTriangles(vertices, indices)),
         pMat(new Material(mat)),
         mTree(vertices, indices)
-    {}
+    {
+        std::vector<Triangle> tris;
+        for(unsigned int i = 0; i < indices.size(); i += 3)
+        {
+            // transform vertices and indices to triangles
+            Vertex vertexes[3] = {vertices[indices[i+0]], 
+                                  vertices[indices[i+1]], 
+                                  vertices[indices[i+2]]};
+            Triangle t = Triangle(vertexes[0].position,
+                                  vertexes[1].position,
+                                  vertexes[2].position);
+            tris.push_back(t);
+        }
+        mT2 = std::move(BVH<Triangle>(std::move(tris)));
+    }
     
     ~TracedMesh() = default;
 
@@ -98,10 +115,22 @@ public:
      *  @returns Interpolated normal
      **/
     vec3f normal(unsigned int triangleID, float u, float v) const {
-        return (1.0f-u-v) * vertices[3*triangleID].normal
-                + u * vertices[3*triangleID+1].normal
-                + v * vertices[3*triangleID+2].normal;
+        return (1.0f-u-v) * vertices[indices[3*triangleID]].normal
+                + u * vertices[indices[3*triangleID+1]].normal
+                + v * vertices[indices[3*triangleID+2]].normal;
     }
+    
+    // vec3f tangent(unsigned int triangleID, float u, float v) const {
+    //     return (1.0f-u-v) * vertices[indices[3*triangleID]].tangent
+    //             + u * vertices[indices[3*triangleID+1]].tangent
+    //             + v * vertices[indices[3*triangleID+2]].tangent;
+    // }
+
+    // vec3f bitangent(unsigned int triangleID, float u, float v) const {
+    //     return (1.0f-u-v) * vertices[indices[3*triangleID]].bitangent
+    //             + u * vertices[indices[3*triangleID+1]].bitangent
+    //             + v * vertices[indices[3*triangleID+2]].bitangent;
+    // }
 
     /** @brief Interpolate texture uvs
      *  @param triangleID: id of intersected triangle
@@ -110,9 +139,9 @@ public:
      *  @returns Interpolated texture uv at point of intersection
      **/
     vec2f texture_uv(unsigned int triangleID, float u, float v) const {
-        return (1.0f-u-v) * vertices[3*triangleID].texCoords
-                + u * vertices[3*triangleID+1].texCoords
-                + v * vertices[3*triangleID+2].texCoords;
+        return (1.0f-u-v) * vertices[indices[3*triangleID]].texCoords
+                + u * vertices[indices[3*triangleID+1]].texCoords
+                + v * vertices[indices[3*triangleID+2]].texCoords;
     }
 
     int triangleCount() const {
@@ -126,8 +155,16 @@ public:
         return mTree.upperBound();
     }
 
+    Triangle triangleAt(unsigned index) const {
+    index = index * 3;
+    return Triangle(
+        vertices[indices[index]].position,
+        vertices[indices[index+1]].position,
+        vertices[indices[index+2]].position
+    );
+}
+
 private:
-    SBVH mTree;
 
     std::vector<PackedTriangles> packTriangles(const std::vector<Vertex> &vVertices, const std::vector<unsigned int> &vIndices) {
         assert(indices.size()%3 == 0);

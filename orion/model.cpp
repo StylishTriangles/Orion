@@ -40,6 +40,7 @@ void TracedModel::loadModel(string const &path)
     directory = path.substr(0, path.find_last_of('/'));
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
+    printf("Number of emissive meshes: %lu\n", emissiveMeshes.size());
 }
 
 // processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
@@ -51,7 +52,11 @@ void TracedModel::processNode(aiNode *node, const aiScene *scene)
         // the node object only contains indices to index the actual objects in the scene. 
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        meshes.push_back(processMesh(mesh, scene));
+        auto tracedMesh = processMesh(mesh, scene);
+        meshes.push_back(tracedMesh);
+        if (tracedMesh.material().isEmissive()) {
+            emissiveMeshes.push_back(tracedMesh);
+        }
     }
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for(unsigned int i = 0; i < node->mNumChildren; i++)
@@ -156,6 +161,11 @@ TracedMesh TracedModel::processMesh(aiMesh *mesh, const aiScene *scene)
     material->Get(AI_MATKEY_COLOR_EMISSIVE, Ke);
     material->Get(AI_MATKEY_SHININESS, shininess);
     material->Get(AI_MATKEY_OPACITY, opacity);
+
+    // printf("%s Ke: [%f, %f, %f]\n", mesh->mName.C_Str(), Ke.r, Ke.g, Ke.b);
+    // printf("%s Kd: [%f, %f, %f]\n", mesh->mName.C_Str(), Ka.r, Ka.g, Ka.b);
+    // vec3f n = vertices[0].normal;
+    // printf("%s normal: [%f, %f, %f]\n", mesh->mName.C_Str(), n.x(), n.y(), n.z());
 
     auto aiToV3F = [](aiColor3D& col) -> vec3f {
         return vec3f(col.r, col.g, col.b);

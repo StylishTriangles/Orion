@@ -37,10 +37,6 @@ See <http://creativecommons.org/publicdomain/zero/1.0/>. */
 
 class xoroshiro128 {
 public:
-    xoroshiro128(uint64_t _seed = 6942013372137ULL) {
-        this->seed(_seed);
-    }
-
     uint64_t min() {
         return 0;
     }

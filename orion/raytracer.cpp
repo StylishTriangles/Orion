@@ -2,6 +2,8 @@
 #include <fstream>
 #include <random>
 
+#include <omp.h>
+
 #include <tqdm/tqdm.hpp>
 #include <stb_image_write.h>
 
@@ -14,8 +16,13 @@ using namespace std;
 
 namespace orion {
 
-void RayTracer::traceRTC(const std::string& rtc_file_name, const std::string& path_to_image)
+void RayTracer::traceRTC(const std::string& rtc_file_name, const std::string& path_to_image, unsigned samples, unsigned light_samples, unsigned threads)
 {
+    this->light_samples = light_samples;
+    if (threads == 0) {
+        threads = omp_get_max_threads();
+    }
+
     filesystem::path rtc_path(rtc_file_name);
     // directory in which rtc file exists
     filesystem::path rtc_dir = rtc_path.parent_path();
@@ -33,44 +40,76 @@ void RayTracer::traceRTC(const std::string& rtc_file_name, const std::string& pa
     vec3f vecFront, vecUp, vecRight;
     calculateCameraVectors(rtc, vecFront, vecUp, vecRight);
 
-    // Random ray direction will be chosen as: 
-    // rf1 * vecRight + rf2 * vecUp,
-    // where rfx is a random float in range (-1,1)
-    uniform_real_distribution<float> randomFloat(-1,1);
+    // Random number generator used to initialize threaded rngs
+    xoroshiro128 init_rng;
+    init_rng.seed((unsigned long)this);
+    xoroshiro128 rng[threads] = {init_rng};
+    
+    for (unsigned i = 1; i < threads; i++) {
+        rng[i] = rng[i-1];
+        rng[i].jump();
+    }
 
-    // Fast random number generator
-    xoroshiro128 rng;
+    // create a pixel fill pattern
+    uniform_real_distribution<float> randomFloat(0,1);
+    float pixelX = 2.0f/float(rtc.xres); // pixel width
+    float pixelY = 2.0f/float(rtc.yres); // pixel heigh
+    vector<pair<float,float>> pattern;
+    for (unsigned i = 0; i < samples; i++) {
+        pattern.push_back({
+            pixelX*randomFloat(init_rng),
+            pixelY*randomFloat(init_rng)
+        });
+    }
+    float inv_samples = 1.0f/samples;
 
     auto progress = tq::trange(int(rtc.yres));
     progress.set_prefix("Raytracing ");
     for (int i: progress) {
-        #pragma omp parallel for
+        #pragma omp parallel for num_threads(threads)
         for (int j = 0; j < rtc.xres; j++) {
             float x = 2 * (float(j) / float(rtc.xres)) - 1;
             float y = 2 * (float(i) / float(rtc.yres)) - 1;
-            y = -y; // flip y axis so that (-1, -1) is the top left corner
-            vec3f dir = vecFront + x * vecRight + y * vecUp;
-            // run raytracer on our model
-            image[i][j] = trace(m, rtc.view_point, dir, rtc.recursion_level);
+
+            // sample pixels
+            for (unsigned k = 0; k < samples; k++) { 
+                float xsample = x + pattern[k].first;
+                float ysample = y + pattern[k].second;
+                ysample = -ysample; // flip y axis so that (-1, -1) is the top left corner
+                vec3f dir = vecFront + (xsample * vecRight) + (ysample * vecUp);
+                
+                // run raytracer on our model
+                image[i][j] += trace(m, rng[omp_get_thread_num()], rtc.view_point, dir, rtc.recursion_level);
+            }
+            image[i][j] *= inv_samples;
         }
     }
     std::cerr << "\n"; // newline after progress bar
     printStatistics(m);
 
-    // save resulting image as ppm file
-    savePNG(path_to_image, image);
+    auto extension = filesystem::path(path_to_image).extension().string();
+    if (extension == ".ppm") {
+        savePPM(path_to_image, image);
+    } else if (extension == ".png") {
+        savePNG(path_to_image, image);
+    } else if (extension == ".hdr") {
+        saveHDR(path_to_image, image);
+    } else {
+        printf("Extension not recognized \"%s\" (will be saved as .hdr), supported extensions: .hdr .png .ppm\n", extension.c_str());
+        saveHDR(path_to_image, image);
+    }
 }
 
-vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth)
+vec3f RayTracer::trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, const vec3f &dir, const int depth)
 {
-    vec3f color = 0.1f;
+    vec3f color = 0.0f;
     // nearest intersection
     float tnear = F_INFINITY;
     
     MeshIntersection inter = m.intersect(origin, dir, tnear);
     // triangle not hit
     if (!inter.intersected())
-        return color;
+        return 0.1f;
     
     // bias will be used to move our ray away from the surface on reflection
     // This value was chosen by trial and error - in a way that primary rays + shadow rays don't generate black pixels
@@ -83,20 +122,86 @@ vec3f RayTracer::trace(TracedModel &m, const vec3f &origin, const vec3f &dir, co
     // calculate point where ray hits the surface
     vec3f hitPos = origin + dir * tnear;
 
-    for (Light const& lght: rtc.lights) {
-        float tnear2 = F_INFINITY;
-        MeshIntersection inter2 = m.intersect(hitPos+(bias*snormal), lght.position-hitPos, tnear2);
-        if (!inter2.intersected())
-            color += inter.material().color(dir, normal, hitPos, lght, uv);
-    }
+    color = inter.material().emissivity(uv);
 
-    // TODO: Tail recursion?
-    if (depth > 0) {
-        // TODO: recognize the edge case where normal is in the opposite direction from surfaceNormal
-        color += inter.material().reflectivity(uv) * trace(m, hitPos + normal*bias, reflect(dir, normal), depth-1);
-    }
+    // Assume BRDF if no lights present
+    if (rtc.lights.empty()) {
+        vec3f direct_light(0.0f);
+        for (auto const& rMesh: m.emissiveSurfaces()) {
+            // sample light source
+            vec3f direct_contribution(0.0f);
+            for (unsigned i = 0; i < light_samples; i++) {
+                float tnear2 = F_INFINITY;
+                // Use Monte Carlo methods to determine if light is visible
+                vec3f target;
+                float light_bias;
+                rMesh.randomPointOnSurface(rng, target, light_bias);
 
-    // color = (normal+1) / 2;
+                MeshIntersection inter2 = m.intersect(
+                    hitPos+(bias*snormal), 
+                    target-hitPos, 
+                    tnear2
+                );
+                
+                // Ray has to intersect with exactly the light source, therefore when t = 1
+                if (inter2.intersected() && inter2.pMesh->mID == rMesh.mID) { // ugly hack to check if we intersected with intended light src
+                    Light l;
+                    l.position = target;
+                    l.intensity = light_bias / rMesh.surfaceArea();
+                    l.color = rMesh.material().emissivity(inter2.texture_uv());
+                    direct_contribution += inter.material().colorBRDF(normal, hitPos, l, inter2.normal().normalized(), uv);
+                }
+            }
+            color += 1.0f/light_samples * direct_contribution;
+        }
+        // direct light calculation finished, return if there is no depth remaining
+        if (depth == 0)
+            return color + direct_light;
+        
+        // russian roulette
+        vec3f kd = inter.material().diffuse(uv);
+        float continueChance = max(max(kd.x(), kd.y()), kd.z());
+        std::uniform_real_distribution<float> udist(0.0f, 1.0f);
+        float randomFloat = udist(rng);
+        if (randomFloat > continueChance) // terminate path
+            return color + direct_light;
+        
+        // path not terminated
+        // sample a random angle based on cosine distribution
+        float sin_theta = sqrtf(udist(rng));
+        float cos_theta = sqrtf(1-sin_theta*sin_theta);
+
+        //random in plane angle
+        float psi = udist(rng)*2.0f*3.1415926535f;
+
+        // calculate tangents
+        vec3f tangent = cross(normal, vec3f(0,1,0));
+        if (tangent.length2() == 0.0f)
+            tangent = cross(normal, vec3f(0,0,1));
+        vec3f bitangent = cross(normal, tangent);
+
+        // calculate vector components
+        float a = sin_theta*cosf(psi);
+        float b = sin_theta*sinf(psi);
+        float c = cos_theta;
+
+        // calculate reflected ray direction
+        vec3f new_dir = a * tangent + b * bitangent + c * normal;
+
+        color += direct_light + kd * trace(m, rng, hitPos + normal*bias, new_dir, depth-1)/continueChance;
+    } else {
+        for (Light const& lght: rtc.lights) {
+            float tnear2 = F_INFINITY;
+            MeshIntersection inter2 = m.intersect(hitPos+(bias*snormal), lght.position-hitPos, tnear2);
+            if (!inter2.intersected())
+                color += inter.material().color(dir, normal, hitPos, lght, uv);
+        }
+        // TODO: Tail recursion?
+        if (depth > 0) {
+            // TODO: recognize the edge case where normal is in the opposite direction from surfaceNormal
+            color += inter.material().reflectivity(uv) * trace(m, rng, hitPos + normal*bias, reflect(dir, normal), depth-1);
+        }
+    }
 
     return color;
 }
@@ -144,7 +249,7 @@ void RayTracer::savePPM(const std::string& path_to_image, const std::vector<std:
     ofs.close();
 }
 
-void RayTracer::savePNG(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image)
+void RayTracer::savePNG(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image, bool normalize)
 {
     struct RGB {
         unsigned char r,g,b,a;
@@ -153,16 +258,42 @@ void RayTracer::savePNG(const std::string& path_to_image, const std::vector<std:
     unsigned width = rtc.xres;
     Array2D<RGB> exporter(height, width);
 
+    vec3f maxi(1.0f);
+    if (normalize) {
+        maxi = vec3f(0.0f);
+        for (unsigned h = 0; h < height; h++)
+            for (unsigned w = 0; w < width; w++)
+                maxi = max(maxi, image[h][w]);
+    }
+    float inv_scale = 1.0f/max(maxi.x(), max(maxi.y(), maxi.z()));
+
     for (unsigned h = 0; h < height; h++) {
         for (unsigned w = 0; w < width; w++) {
-            exporter[h][w].r = min(1.0f, image[h][w].x())*255;
-            exporter[h][w].g = min(1.0f, image[h][w].y())*255;
-            exporter[h][w].b = min(1.0f, image[h][w].z())*255;
+            exporter[h][w].r = min(1.0f, image[h][w].x()*inv_scale)*255;
+            exporter[h][w].g = min(1.0f, image[h][w].y()*inv_scale)*255;
+            exporter[h][w].b = min(1.0f, image[h][w].z()*inv_scale)*255;
             exporter[h][w].a = 255;
         }
     }
 
     int ret = stbi_write_png(path_to_image.c_str(), width, height, 4, exporter.begin(), width*sizeof(RGB));
+    if (ret == 0) {
+        std::cout << "Error ocurred when saving file to " << path_to_image << std::endl;
+    }
+}
+
+void RayTracer::saveHDR(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image)
+{
+    unsigned height = rtc.yres;
+    unsigned width = rtc.xres;
+    Array2D<vec3f_compact> exporter(height, width);
+
+    for (unsigned h = 0; h < height; h++) {
+        for (unsigned w = 0; w < width; w++) {
+            exporter[h][w] = vec3f_compact(image[h][w]);
+        }
+    }
+    int ret = stbi_write_hdr(path_to_image.c_str(), width, height, 3, (float*)exporter.begin());
     if (ret == 0) {
         std::cout << "Error ocurred when saving file to " << path_to_image << std::endl;
     }

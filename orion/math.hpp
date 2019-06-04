@@ -322,6 +322,16 @@ static inline vec3f reflect(vec3f I, vec3f N) {
     return I - 2.0f * dot(N, I) * N;
 }
 
+// @returns average of all 3 axes
+static inline float avg(const vec3f& a) {
+    return (a.x() + a.y() + a.z()) * 0.3333333333f;
+}
+
+/** SCALAR FUNCTIONS **/
+static inline float rsqrt(float val) {
+    return _mm_cvtss_f32(_mm_rsqrt_ss(_mm_set_ss(val)));
+}
+
 // utility functions
 template <typename T>
 static inline T min(const T& a, const T& b) {

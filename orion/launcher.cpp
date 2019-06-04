@@ -22,6 +22,15 @@ int main(int argc, char** argv)
     std::string output;
     raytracer.add_option("--output,-o", output, "Output file where rendered image will be saved")->default_str("raytracer.png");
 
+    unsigned supersamples;
+    raytracer.add_option("-p", supersamples, "Pixel samples")->default_val("1");
+
+    unsigned lightsamples;
+    raytracer.add_option("-l", lightsamples, "Shadow Ray samples")->default_val("1");
+
+    unsigned threads;
+    raytracer.add_option("--threads,-t", threads, "How many threads should raytracer use [0 => as many as CPU cores]")->default_val("0");
+
     CLI11_PARSE(raytracer, argc, argv);
 
     // if (argc != 2) {
@@ -30,7 +39,7 @@ int main(int argc, char** argv)
     // }
 
     orion::RayTracer RT;
-    RT.traceRTC(rtc_file, output);
+    RT.traceRTC(rtc_file, output, supersamples, lightsamples, threads);
 
     return 0;
 }

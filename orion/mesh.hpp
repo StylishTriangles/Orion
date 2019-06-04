@@ -9,7 +9,7 @@
 #include <orion/material.hpp>
 #include <orion/math.hpp>
 #include <orion/vertex.hpp>
-#include <orion/bvh.hpp>
+// #include <orion/bvh.hpp>
 #include <orion/avx/geometry.hpp>
 #include <orion/avx/sbvh.hpp>
 
@@ -28,8 +28,9 @@ public:
     std::vector<unsigned int> indices;
     std::vector<PackedTriangles> triangles;
     std::unique_ptr<Material> pMat; // on top of this will be applied textures
-    BVH<Triangle> mT2;
+    // BVH<Triangle> mT2;
     SBVH mTree;
+    unsigned mID;
 
     // Textures are cut from this Mesh at the moment
 
@@ -43,7 +44,8 @@ public:
         indices     (tm.indices),
         triangles   (tm.triangles),
         pMat        (new Material(*tm.pMat)),
-        mTree       (tm.mTree)
+        mTree       (tm.mTree),
+        mID         (tm.mID)
     {}
 
     // // move constructor
@@ -62,19 +64,21 @@ public:
         pMat(new Material(mat)),
         mTree(vertices, indices)
     {
-        std::vector<Triangle> tris;
-        for(unsigned int i = 0; i < indices.size(); i += 3)
-        {
-            // transform vertices and indices to triangles
-            Vertex vertexes[3] = {vertices[indices[i+0]], 
-                                  vertices[indices[i+1]], 
-                                  vertices[indices[i+2]]};
-            Triangle t = Triangle(vertexes[0].position,
-                                  vertexes[1].position,
-                                  vertexes[2].position);
-            tris.push_back(t);
-        }
-        mT2 = std::move(BVH<Triangle>(std::move(tris)));
+        static unsigned id = 0;
+        mID = id++;
+        // std::vector<Triangle> tris;
+        // for(unsigned int i = 0; i < indices.size(); i += 3)
+        // {
+        //     // transform vertices and indices to triangles
+        //     Vertex vertexes[3] = {vertices[indices[i+0]], 
+        //                           vertices[indices[i+1]], 
+        //                           vertices[indices[i+2]]};
+        //     Triangle t = Triangle(vertexes[0].position,
+        //                           vertexes[1].position,
+        //                           vertexes[2].position);
+        //     tris.push_back(t);
+        // }
+        // mT2 = std::move(BVH<Triangle>(std::move(tris)));
     }
     
     ~TracedMesh() = default;
@@ -144,7 +148,7 @@ public:
                 + v * vertices[indices[3*triangleID+2]].texCoords;
     }
 
-    int triangleCount() const {
+    unsigned triangleCount() const {
         return indices.size()/3;
     }
 
@@ -155,14 +159,44 @@ public:
         return mTree.upperBound();
     }
 
+    // Returns the surface area
+    float surfaceArea() const {
+        float res = 0;
+        for (unsigned i = 0; i < indices.size(); i+=3) {
+            Triangle tri(
+                vertices[indices[i]].position,
+                vertices[indices[i+1]].position,
+                vertices[indices[i+2]].position
+            );
+            res += tri.surfaceArea();
+        }
+        return res;
+    }
+
+    /**
+     *  @param rng: random number generator with overloaded operator(void)
+     *  @param point (out): randomly generated point on surface
+     *  @param bias (out): points may not conform to uniform distribution, algorithm picks triangles at random, so
+     *      small triangle is as likely to be chosen as a big triangle. Bias of 1.0 means that point was chosen uniformly,
+     *      Bias < 1.0 means that returned point was more likely to be chosen than it should've been
+     *      Bias > 1.0 means that returned point was less likely to be chosen
+     */
+    template<typename RandomNumberGenerator>
+    void randomPointOnSurface(RandomNumberGenerator &rng, vec3f& point, float& bias) const {
+        unsigned random_index = unsigned(rng())%triangleCount();
+        Triangle tri = triangleAt(random_index);
+        bias = (tri.surfaceArea()/surfaceArea()) * triangleCount();
+        tri.randomPointOnSurface(rng, point);
+    }
+
     Triangle triangleAt(unsigned index) const {
-    index = index * 3;
-    return Triangle(
-        vertices[indices[index]].position,
-        vertices[indices[index+1]].position,
-        vertices[indices[index+2]].position
-    );
-}
+        index = index * 3;
+        return Triangle(
+            vertices[indices[index]].position,
+            vertices[indices[index+1]].position,
+            vertices[indices[index+2]].position
+        );
+    }
 
 private:
 

@@ -7,6 +7,7 @@
 #include <orion/light.hpp>
 #include <orion/math.hpp>
 #include <orion/model.hpp>
+#include <orion/random.hpp>
 #include <orion/rtc_parser.hpp>
 
 namespace orion {
@@ -22,13 +23,14 @@ public:
     ~RayTracer() = default;
 
     // Simple function to trace a single model described in an rtc file 
-    void traceRTC(const std::string& rtc_file_name, const std::string& path_to_image = "raytracer.png");
+    void traceRTC(const std::string& rtc_file_name, const std::string& path_to_image, unsigned samples, unsigned light_samples, unsigned threads);
 
 protected:
     void savePPM(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image);
-    void savePNG(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image);
+    void savePNG(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image, bool normalize = true);
+    void saveHDR(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image);
 
-    vec3f trace(TracedModel &m, const vec3f &origin, const vec3f &dir, const int depth);
+    vec3f trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, const vec3f &dir, const int depth);
 
     /** 
      * @brief Calculate camera vectors based on loaded rtc.
@@ -44,8 +46,7 @@ protected:
 
 private:
     rtc_data rtc;
-    // During reflection, rays' positions are adjusted proportionally to the value of bias
-    float bias;
+    unsigned light_samples;
 };
 
 };

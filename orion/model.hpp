@@ -61,6 +61,10 @@ public:
         return ret;
     }
 
+    const std::vector<TracedMesh> & emissiveSurfaces() const {
+        return emissiveMeshes;
+    }
+
     int triangleCount() {
         int sum = 0;
         for (auto const& mesh: meshes) {
@@ -91,6 +95,7 @@ private:
     // Temporarily removed as we are not utilizing textures
     std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
     std::vector<TracedMesh> meshes;
+    std::vector<TracedMesh> emissiveMeshes; // emissive meshes
     std::string directory;
     bool gammaCorrection;
 

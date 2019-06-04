@@ -76,6 +76,7 @@ public:
             vec3f ambient = tex[AMBIENT].color(uv);
 
             // Diffuse
+            float distance2 = (light.position - hitPoint).length2();
             vec3f lightDir = normalize(light.position - hitPoint);
             float diff = max(dot(norm, lightDir), 0.0f);
             vec3f diffuse = diff * tex[DIFFUSE].color(uv);
@@ -86,9 +87,21 @@ public:
             float spec = 0.5f*std::pow(max(dot(viewDir, reflectDir), 0.0f), sol.shininess);
             vec3f specular = spec * tex[SPECULAR].color(uv);
 
-            return light.color * (ambient + diffuse + specular);
+            return light.color * (ambient + diffuse + specular) * light.intensity / distance2;
         }
         return vec3f(0.0f);
+    }
+
+    vec3f colorBRDF(const vec3f& normal, const vec3f & hitPoint, const Light& light, const vec3f& lightNormal, const vec2f& uv) const {
+        vec3f norm = normal;
+
+        // Diffuse
+        float distance2 = (light.position - hitPoint).length2();
+        vec3f lightDir = normalize(light.position - hitPoint);
+        float diff = max(dot(norm, lightDir)*dot(lightNormal, -lightDir), 0.0f);
+        vec3f diffuse = diff * tex[DIFFUSE].color(uv);
+
+        return light.color * diffuse * light.intensity / (1+distance2);
     }
 
     // @brief calculate reflectivity of surface on each of three channels
@@ -98,6 +111,20 @@ public:
             return tex[SPECULAR].color(uv);
         }
         return vec3f(0.0f);
+    }
+
+    // @returns the emissive factor of the surface, given uv coordinates
+    vec3f emissivity(const vec2f& uv = vec2f(0.0f)) const {
+        return tex[EMISSIVE].color(uv);
+    }  
+
+    // @returns the diffuse factor of the surface, given uv coordinates
+    vec3f diffuse(const vec2f& uv = vec2f(0.0f)) const {
+        return tex[DIFFUSE].color(uv);
+    }  
+
+    bool isEmissive() const {
+        return sol.color_emissive.x() != 0.0f || sol.color_emissive.y() != 0.0f || sol.color_emissive.z() != 0.0f;
     }
 
     // @brief calculate normal using material's bump map

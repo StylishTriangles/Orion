@@ -2,6 +2,7 @@
 #define ORION_GEOMETRY_HPP
 
 #include <cmath>
+#include <random>
 
 #include <orion/AABB.hpp>
 #include <orion/interfaces.hpp>
@@ -149,6 +150,24 @@ public:
         vec3f v1 = v0+e1;
         vec3f v2 = v0+e2;
         return max(max(v0,v1), v2);
+    }
+
+    float surfaceArea() const {
+        return abs(dot(e1,e2))*0.5f;
+    }
+
+    template<typename RandomNumberGenerator>
+    void randomPointOnSurface(RandomNumberGenerator &rng, vec3f& point) const {
+        std::uniform_real_distribution<float> distr(0.0f, 1.0f);
+        float a = distr(rng);
+        float b = distr(rng);
+
+        if (a+b > 1) {
+            a = 1.0f-a;
+            b = 1.0f-b;
+        }
+
+        point = v0 + a*e1 + b*e2;
     }
 }; // class Triangle
 

@@ -46,9 +46,6 @@ unsigned int SBVH::innerIntersect(
     // Check if ray intersects node's bounding volume
     float tmpa = 0, tmpb = 0;
     // BBInt++;
-    if (!node->bv.intersect(orig, dir, tmpa, tmpb)) {
-        return INVALID_RESULT;
-    }
 
     if (node->isLeaf) {
         unsigned intersectID = INVALID_RESULT;
@@ -60,6 +57,8 @@ unsigned int SBVH::innerIntersect(
                 intersectID = mTriangles[i].originalID;
         }
         return intersectID;
+    } else if (!node->bv.intersect(orig, dir, tmpa, tmpb)) {
+        return INVALID_RESULT;
     } else {
         unsigned r0 = innerIntersect(
             orig,

@@ -42,4 +42,5 @@ Parameters used for this render:
 - samples per pixel = 2048
 - light samples = 2
 - resolution = 1920x1080
+
 Render time: 5126.4s (roughly 1h25m)

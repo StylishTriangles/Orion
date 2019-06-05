@@ -122,7 +122,7 @@ vec3f RayTracer::trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, c
     // calculate point where ray hits the surface
     vec3f hitPos = origin + dir * tnear;
 
-    color = inter.material().emissivity(uv);
+    color = inter.material().emissivity(uv) / inter.pMesh->surfaceArea() * dot(normalize(dir), -normal);
 
     // Assume BRDF if no lights present
     if (rtc.lights.empty()) {

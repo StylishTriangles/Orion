@@ -30,7 +30,7 @@ protected:
     void savePNG(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image, bool normalize = true);
     void saveHDR(const std::string& path_to_image, const std::vector<std::vector<vec3f> > &image);
 
-    vec3f trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, const vec3f &dir, const int depth);
+    vec3f trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, const vec3f &dir, const unsigned depth = 0);
 
     /** 
      * @brief Calculate camera vectors based on loaded rtc.
@@ -47,8 +47,9 @@ protected:
 private:
     rtc_data rtc;
     unsigned light_samples;
-};
+    unsigned max_depth;
+}; // class RayTracer
 
-};
+}; // namespace orion
 
 #endif // ORION_RAYTRACER_HPP

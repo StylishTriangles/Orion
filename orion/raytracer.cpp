@@ -43,8 +43,8 @@ void RayTracer::traceRTC(const std::string& rtc_file_name, const std::string& pa
     // Random number generator used to initialize threaded rngs
     xoroshiro128 init_rng;
     init_rng.seed((unsigned long)this);
-    xoroshiro128 rng[threads] = {init_rng};
-    
+    xoroshiro128 rng[threads];
+    rng[0] = init_rng;
     for (unsigned i = 1; i < threads; i++) {
         rng[i] = rng[i-1];
         rng[i].jump();
@@ -64,6 +64,7 @@ void RayTracer::traceRTC(const std::string& rtc_file_name, const std::string& pa
     float inv_samples = 1.0f/samples;
 
     auto progress = tq::trange(int(rtc.yres));
+    this->max_depth = rtc.recursion_level;
     progress.set_prefix("Raytracing ");
     for (int i: progress) {
         #pragma omp parallel for num_threads(threads)
@@ -79,7 +80,8 @@ void RayTracer::traceRTC(const std::string& rtc_file_name, const std::string& pa
                 vec3f dir = vecFront + (xsample * vecRight) + (ysample * vecUp);
                 
                 // run raytracer on our model
-                image[i][j] += trace(m, rng[omp_get_thread_num()], rtc.view_point, dir, rtc.recursion_level);
+                vec3f tracedColor = trace(m, rng[omp_get_thread_num()], rtc.view_point, dir);
+                image[i][j] += tracedColor;
             }
             image[i][j] *= inv_samples;
         }
@@ -100,7 +102,7 @@ void RayTracer::traceRTC(const std::string& rtc_file_name, const std::string& pa
     }
 }
 
-vec3f RayTracer::trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, const vec3f &dir, const int depth)
+vec3f RayTracer::trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, const vec3f &dir, const unsigned depth)
 {
     vec3f color = 0.0f;
     // nearest intersection
@@ -109,7 +111,7 @@ vec3f RayTracer::trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, c
     MeshIntersection inter = m.intersect(origin, dir, tnear);
     // triangle not hit
     if (!inter.intersected())
-        return 0.1f;
+        return 0.0f;
     
     // bias will be used to move our ray away from the surface on reflection
     // This value was chosen by trial and error - in a way that primary rays + shadow rays don't generate black pixels
@@ -122,7 +124,8 @@ vec3f RayTracer::trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, c
     // calculate point where ray hits the surface
     vec3f hitPos = origin + dir * tnear;
 
-    color = inter.material().emissivity(uv) / inter.pMesh->surfaceArea() * dot(normalize(dir), -normal);
+    if (depth == 0) // primary ray hits emissive surface
+        color = inter.material().emissivity(uv) * inter.pMesh->surfaceArea() * dot(normalize(dir), -normal);
 
     // Assume BRDF if no lights present
     if (rtc.lights.empty()) {
@@ -147,7 +150,7 @@ vec3f RayTracer::trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, c
                 if (inter2.intersected() && inter2.pMesh->mID == rMesh.mID) { // ugly hack to check if we intersected with intended light src
                     Light l;
                     l.position = target;
-                    l.intensity = light_bias / rMesh.surfaceArea();
+                    l.intensity = light_bias * rMesh.surfaceArea();
                     l.color = rMesh.material().emissivity(inter2.texture_uv());
                     direct_contribution += inter.material().colorBRDF(normal, hitPos, l, inter2.normal().normalized(), uv);
                 }
@@ -155,7 +158,7 @@ vec3f RayTracer::trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, c
             color += 1.0f/light_samples * direct_contribution;
         }
         // direct light calculation finished, return if there is no depth remaining
-        if (depth == 0)
+        if (depth >= max_depth)
             return color + direct_light;
         
         // russian roulette
@@ -188,7 +191,7 @@ vec3f RayTracer::trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, c
         // calculate reflected ray direction
         vec3f new_dir = a * tangent + b * bitangent + c * normal;
 
-        color += direct_light + kd * trace(m, rng, hitPos + normal*bias, new_dir, depth-1)/continueChance;
+        color += direct_light + kd * trace(m, rng, hitPos + normal*bias, new_dir, depth+1)/continueChance;
     } else {
         for (Light const& lght: rtc.lights) {
             float tnear2 = F_INFINITY;
@@ -197,9 +200,9 @@ vec3f RayTracer::trace(TracedModel &m, xoroshiro128& rng, const vec3f &origin, c
                 color += inter.material().color(dir, normal, hitPos, lght, uv);
         }
         // TODO: Tail recursion?
-        if (depth > 0) {
+        if (depth < this->max_depth) {
             // TODO: recognize the edge case where normal is in the opposite direction from surfaceNormal
-            color += inter.material().reflectivity(uv) * trace(m, rng, hitPos + normal*bias, reflect(dir, normal), depth-1);
+            color += inter.material().reflectivity(uv) * trace(m, rng, hitPos + normal*bias, reflect(dir, normal), depth+1);
         }
     }
 

@@ -31,6 +31,7 @@ public:
     // BVH<Triangle> mT2;
     SBVH mTree;
     unsigned mID;
+    float mSurfaceArea;
 
     // Textures are cut from this Mesh at the moment
 
@@ -45,7 +46,8 @@ public:
         triangles   (tm.triangles),
         pMat        (new Material(*tm.pMat)),
         mTree       (tm.mTree),
-        mID         (tm.mID)
+        mID         (tm.mID),
+        mSurfaceArea(tm.mSurfaceArea)
     {}
 
     // // move constructor
@@ -66,6 +68,7 @@ public:
     {
         static unsigned id = 0;
         mID = id++;
+        calcSurfaceArea();
         // std::vector<Triangle> tris;
         // for(unsigned int i = 0; i < indices.size(); i += 3)
         // {
@@ -161,16 +164,7 @@ public:
 
     // Returns the surface area
     float surfaceArea() const {
-        float res = 0;
-        for (unsigned i = 0; i < indices.size(); i+=3) {
-            Triangle tri(
-                vertices[indices[i]].position,
-                vertices[indices[i+1]].position,
-                vertices[indices[i+2]].position
-            );
-            res += tri.surfaceArea();
-        }
-        return res;
+        return mSurfaceArea;
     }
 
     /**
@@ -199,6 +193,19 @@ public:
     }
 
 private:
+
+    void calcSurfaceArea() {
+        float res = 0;
+        for (unsigned i = 0; i < indices.size(); i+=3) {
+            Triangle tri(
+                vertices[indices[i]].position,
+                vertices[indices[i+1]].position,
+                vertices[indices[i+2]].position
+            );
+            res += tri.surfaceArea();
+        }
+        mSurfaceArea = res;
+    }
 
     std::vector<PackedTriangles> packTriangles(const std::vector<Vertex> &vVertices, const std::vector<unsigned int> &vIndices) {
         assert(indices.size()%3 == 0);

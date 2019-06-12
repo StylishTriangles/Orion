@@ -37,6 +37,9 @@ See <http://creativecommons.org/publicdomain/zero/1.0/>. */
 
 class xoroshiro128 {
 public:
+    xoroshiro128() = default;
+    xoroshiro128(const xoroshiro128&) = default;
+
     uint64_t min() {
         return 0;
     }

@@ -36,7 +36,7 @@ Simple raytracer.
 2. `@> ./build/rviewer path/to/config.rtc`
 
 # Cornell Box render
-![Cornell Box](images/cornell-box_fhd.png)
+![Cornell Box](images/cornell-box_fhd2.png)
 Parameters used for this render:
 - max depth = 100
 - samples per pixel = 2048
